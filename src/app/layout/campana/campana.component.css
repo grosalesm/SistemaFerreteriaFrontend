@@ -1,0 +1,26 @@
+.panel {
+  width: 360px;
+  max-width: calc(100vw - 2rem);
+}
+
+.lista {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  white-space: normal;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.no-leida {
+  background: #fff7ee;
+}
+
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-acento);
+  flex-shrink: 0;
+}

@@ -1,0 +1,23 @@
+.fondo {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-sidebar) 0%, #2d333b 100%);
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 1rem;
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  border-radius: 1rem;
+  background: var(--color-acento);
+  color: #fff;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

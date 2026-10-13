@@ -1,0 +1,59 @@
+@if (camposBusqueda.length) {
+  <div class="input-group mb-3 buscador">
+    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+    <input type="search" class="form-control" [placeholder]="placeholder"
+           [(ngModel)]="texto" (ngModelChange)="buscar()">
+  </div>
+}
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-light">
+      <tr>
+        <ng-container [ngTemplateOutlet]="cabecera"></ng-container>
+      </tr>
+    </thead>
+    <tbody>
+      @if (cargando) {
+        <tr>
+          <td colspan="100" class="text-center text-muted py-4">
+            <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+          </td>
+        </tr>
+      } @else {
+        @for (item of paginaActual; track $index) {
+          <tr [class]="claseFila(item)">
+            <ng-container [ngTemplateOutlet]="fila" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="100" class="text-center text-muted py-4">{{ mensajeVacio }}</td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (!cargando && filtrados.length > tamanoPagina) {
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+    <small class="text-muted">Mostrando {{ desde }}–{{ hasta }} de {{ filtrados.length }}</small>
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" [class.disabled]="pagina === 1">
+          <button class="page-link" (click)="irA(pagina - 1)"><i class="bi bi-chevron-left"></i></button>
+        </li>
+        @for (p of paginas; track p) {
+          <li class="page-item" [class.active]="p === pagina">
+            <button class="page-link" (click)="irA(p)">{{ p }}</button>
+          </li>
+        }
+        <li class="page-item" [class.disabled]="pagina === totalPaginas">
+          <button class="page-link" (click)="irA(pagina + 1)"><i class="bi bi-chevron-right"></i></button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+} @else if (!cargando && filtrados.length) {
+  <small class="text-muted d-block mt-3">{{ filtrados.length }} registro(s)</small>
+}

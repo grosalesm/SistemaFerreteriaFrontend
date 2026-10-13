@@ -1,0 +1,98 @@
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: var(--color-sidebar);
+  color: #c9ced6;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 1.5rem;
+  color: #fff;
+}
+
+.marca i {
+  font-size: 1.75rem;
+  color: var(--color-acento);
+}
+
+.marca small {
+  color: #8b929c;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #c9ced6;
+  padding: 0.65rem 1.25rem;
+  border-left: 3px solid transparent;
+}
+
+.nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link.activo {
+  color: #fff;
+  background: rgba(245, 124, 0, 0.12);
+  border-left-color: var(--color-acento);
+}
+
+.nav-link i {
+  font-size: 1.1rem;
+}
+
+.principal {
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.navbar {
+  min-height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--color-acento);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Responsive: en pantallas chicas el sidebar se abre encima del contenido */
+@media (max-width: 991.98px) {
+  .sidebar {
+    position: fixed;
+    left: -240px;
+    z-index: 1040;
+    transition: left 0.2s;
+  }
+
+  .sidebar.abierto {
+    left: 0;
+  }
+
+  .fondo-menu {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1030;
+  }
+}

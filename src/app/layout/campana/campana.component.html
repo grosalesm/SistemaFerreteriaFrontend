@@ -1,0 +1,38 @@
+<div class="dropdown">
+  <button class="btn btn-light position-relative" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+          (click)="cargar()" title="Notificaciones">
+    <i class="bi bi-bell fs-5"></i>
+    @if (noLeidas > 0) {
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        {{ noLeidas > 99 ? '99+' : noLeidas }}
+      </span>
+    }
+  </button>
+
+  <div class="dropdown-menu dropdown-menu-end shadow p-0 panel">
+    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+      <strong>Notificaciones</strong>
+      @if (noLeidas > 0) {
+        <button class="btn btn-link btn-sm p-0 text-decoration-none" (click)="marcarTodas()">Marcar todas</button>
+      }
+    </div>
+
+    <div class="lista">
+      @for (n of notificaciones; track n.idNotificacion) {
+        <button type="button" class="dropdown-item d-flex gap-2 py-2" [class.no-leida]="!n.leida" (click)="marcarLeida(n)">
+          <i class="bi mt-1" [class]="icono(n.tipo)"></i>
+          <div class="flex-grow-1 text-wrap">
+            <div class="fw-semibold small">{{ n.titulo }}</div>
+            <div class="small text-muted">{{ n.mensaje }}</div>
+            <div class="small text-muted">{{ n.fecha | fecha }}</div>
+          </div>
+          @if (!n.leida) {
+            <span class="punto mt-2"></span>
+          }
+        </button>
+      } @empty {
+        <div class="text-center text-muted small py-4">No hay notificaciones</div>
+      }
+    </div>
+  </div>
+</div>

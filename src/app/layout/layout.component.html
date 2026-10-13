@@ -1,0 +1,55 @@
+<div class="d-flex">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.abierto]="menuAbierto">
+    <div class="marca">
+      <i class="bi bi-tools"></i>
+      <div>
+        <div class="fw-bold">El Constructor</div>
+        <small>Ferretería</small>
+      </div>
+    </div>
+
+    <nav class="nav flex-column">
+      @for (o of opciones; track o.ruta) {
+        <a class="nav-link" [routerLink]="o.ruta" routerLinkActive="activo" (click)="menuAbierto = false">
+          <i class="bi" [class]="o.icono"></i>
+          <span>{{ o.etiqueta }}</span>
+        </a>
+      }
+    </nav>
+  </aside>
+
+  @if (menuAbierto) {
+    <div class="fondo-menu d-lg-none" (click)="menuAbierto = false"></div>
+  }
+
+  <!-- Contenido -->
+  <div class="principal flex-grow-1">
+    <header class="navbar bg-white border-bottom px-3 px-lg-4">
+      <button class="btn btn-light d-lg-none" (click)="menuAbierto = !menuAbierto">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <app-campana />
+
+        <div class="d-flex align-items-center gap-2">
+          <div class="avatar">{{ iniciales }}</div>
+          <div class="lh-sm d-none d-sm-block">
+            <div class="fw-semibold">{{ auth.nombreCompleto }}</div>
+            <small class="text-muted">{{ nombreRol }}</small>
+          </div>
+        </div>
+
+        <button class="btn btn-outline-secondary btn-sm" (click)="cerrarSesion()" title="Cerrar sesión">
+          <i class="bi bi-box-arrow-right"></i>
+          <span class="d-none d-md-inline ms-1">Salir</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="p-3 p-lg-4">
+      <router-outlet />
+    </main>
+  </div>
+</div>
