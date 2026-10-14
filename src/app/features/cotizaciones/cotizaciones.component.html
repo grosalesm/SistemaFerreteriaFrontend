@@ -1,0 +1,78 @@
+<div class="encabezado">
+  <h1>Cotizaciones</h1>
+  <a class="btn btn-acento" routerLink="/cotizaciones/nueva">
+    <i class="bi bi-plus-lg me-1"></i>Nueva cotización
+  </a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" (ngSubmit)="buscar()">
+      <div class="col-md-3">
+        <label class="form-label">Estado</label>
+        <select class="form-select" name="estado" [(ngModel)]="filtro.estado" (change)="buscar()">
+          <option [ngValue]="null">Todos</option>
+          @for (e of estados; track e) {
+            <option [ngValue]="e">{{ e.charAt(0) + e.slice(1).toLowerCase() }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Desde</label>
+        <input type="date" class="form-control" name="desde" [(ngModel)]="filtro.desde">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Hasta</label>
+        <input type="date" class="form-control" name="hasta" [(ngModel)]="filtro.hasta">
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-dark flex-grow-1"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+        <button type="button" class="btn btn-light" (click)="limpiar()">Limpiar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <app-tabla-paginada [items]="cotizaciones" [cargando]="cargando"
+                        [camposBusqueda]="['codigo', 'clienteNombre']" placeholder="Buscar por código o cliente..."
+                        mensajeVacio="No hay cotizaciones con esos filtros.">
+      <ng-template #cabecera>
+        <th>Código</th>
+        <th>Cliente</th>
+        <th>Canal</th>
+        <th>Creada</th>
+        <th>Vence</th>
+        <th>Estado</th>
+        <th class="text-end">Total</th>
+        <th></th>
+      </ng-template>
+
+      <ng-template #fila let-c>
+        <td class="text-nowrap">
+          <a class="fw-semibold text-decoration-none" [routerLink]="['/cotizaciones', c.idCotizacion]">{{ c.codigo }}</a>
+        </td>
+        <td>
+          {{ c.clienteNombre }}
+          @if (c.tipoCliente === 'CONTRATISTA') {
+            <span class="badge text-bg-dark ms-1">Contratista</span>
+          }
+        </td>
+        <td>
+          <i class="bi" [class]="c.canal === 'ANDROID' ? 'bi-phone' : 'bi-laptop'" [title]="c.canal"></i>
+          <small class="text-muted ms-1">{{ c.canal === 'ANDROID' ? 'App' : 'Web' }}</small>
+        </td>
+        <td class="text-nowrap">{{ c.fechaCreacion | fecha }}</td>
+        <td class="text-nowrap">{{ c.fechaVencimiento ? (c.fechaVencimiento | fecha) : '—' }}</td>
+        <td><app-badge-estado [estado]="c.estado" /></td>
+        <td class="text-end text-nowrap fw-semibold">{{ c.total | moneda }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-dark" [routerLink]="['/cotizaciones', c.idCotizacion]" title="Ver detalle">
+            <i class="bi bi-eye"></i>
+          </a>
+        </td>
+      </ng-template>
+    </app-tabla-paginada>
+  </div>
+</div>

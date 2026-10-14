@@ -1,0 +1,259 @@
+<div class="encabezado">
+  <div>
+    <a [routerLink]="editando ? ['/cotizaciones', editando.idCotizacion] : '/cotizaciones'"
+       class="text-decoration-none small text-muted">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    <h1 class="mt-1">{{ editando ? 'Editar ' + editando.codigo : 'Nueva cotización' }}</h1>
+  </div>
+</div>
+
+@if (cargando) {
+  <div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</div>
+} @else {
+<div class="row g-4">
+  <!-- Columna principal -->
+  <div class="col-lg-8">
+
+    <!-- 1. Cliente y almacén -->
+    <div class="card mb-4">
+      <div class="card-header"><span class="paso">1</span>Cliente y almacén</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label">Cliente</label>
+            @if (cliente) {
+              <div class="d-flex align-items-center justify-content-between border rounded p-2 ps-3 bg-light">
+                <div>
+                  <div class="fw-semibold">{{ cliente.nombreRazonSocial }}</div>
+                  <small class="text-muted">{{ cliente.tipoDocumento }} {{ cliente.numeroDocumento }}</small>
+                  <span class="badge ms-2" [class]="cliente.tipoCliente === 'CONTRATISTA' ? 'text-bg-dark' : 'text-bg-light border'">
+                    Precio {{ cliente.tipoCliente === 'CONTRATISTA' ? 'contratista' : 'minorista' }}
+                  </span>
+                </div>
+                @if (!editando) {
+                  <button class="btn btn-sm btn-outline-secondary" (click)="quitarCliente()">Cambiar</button>
+                }
+              </div>
+            } @else {
+              <div class="position-relative">
+                <div class="input-group">
+                  <span class="input-group-text bg-white">
+                    @if (buscandoClientes) {
+                      <span class="spinner-border spinner-border-sm"></span>
+                    } @else {
+                      <i class="bi bi-person-search"></i>
+                    }
+                  </span>
+                  <input class="form-control" [formControl]="buscarCliente" placeholder="Nombre, razón social, DNI o RUC"
+                         autocomplete="off">
+                </div>
+                @if (clientesEncontrados.length) {
+                  <div class="list-group resultados shadow">
+                    @for (c of clientesEncontrados; track c.idCliente) {
+                      <button type="button" class="list-group-item list-group-item-action" (click)="seleccionarCliente(c)">
+                        <div class="d-flex justify-content-between">
+                          <span class="fw-semibold">{{ c.nombreRazonSocial }}</span>
+                          <small class="text-muted">{{ c.tipoCliente === 'CONTRATISTA' ? 'Contratista' : 'Minorista' }}</small>
+                        </div>
+                        <small class="text-muted">{{ c.tipoDocumento }} {{ c.numeroDocumento }}</small>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="form-text">
+                Escriba al menos 2 caracteres. ¿No existe? <a routerLink="/clientes">Regístrelo en Clientes</a>.
+              </div>
+            }
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Almacén</label>
+            <select class="form-select" [formControl]="idAlmacen">
+              @for (a of almacenes; track a.idAlmacen) {
+                <option [ngValue]="a.idAlmacen">{{ a.nombre }} ({{ a.codigo }})</option>
+              }
+            </select>
+            @if (editando) {
+              <div class="form-text">No se puede cambiar en un borrador.</div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Productos -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><span class="paso">2</span>Productos</span>
+        <small class="text-muted fw-normal">{{ carrito.length }} / 50</small>
+      </div>
+      <div class="card-body">
+        <div class="position-relative mb-3">
+          <div class="input-group">
+            <span class="input-group-text bg-white">
+              @if (buscandoProductos) {
+                <span class="spinner-border spinner-border-sm"></span>
+              } @else {
+                <i class="bi bi-search"></i>
+              }
+            </span>
+            <input class="form-control" [formControl]="buscarProducto" placeholder="Buscar producto por SKU o nombre y presionar Enter"
+                   autocomplete="off" (keydown.enter)="agregarPrimero($event)">
+          </div>
+          @if (productosEncontrados.length) {
+            <div class="list-group resultados shadow">
+              @for (p of productosEncontrados; track p.idProducto) {
+                <button type="button" class="list-group-item list-group-item-action" (click)="agregar(p)">
+                  <div class="d-flex justify-content-between gap-3">
+                    <div>
+                      <div class="fw-semibold">{{ p.nombre }}</div>
+                      <small class="text-muted"><code>{{ p.sku }}</code> · {{ p.unidadMedida }}
+                        @if (p.porcentajeDescuento > 0) {
+                          · <span class="text-success">{{ p.porcentajeDescuento }} % desde {{ p.cantidadMinimaDescuento }}</span>
+                        }
+                      </small>
+                    </div>
+                    <div class="text-end text-nowrap">
+                      <div class="fw-semibold">{{ precioLista(p) | moneda }}</div>
+                      @let disp = disponibleEnAlmacen(p.disponiblePorAlmacen);
+                      <small [class]="disp ? 'text-muted' : 'text-danger'">Disp.: {{ disp }}</small>
+                    </div>
+                  </div>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (carrito.length) {
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th style="width: 150px">Cantidad</th>
+                  <th class="text-end">P. unit.</th>
+                  <th class="text-end">Dscto.</th>
+                  <th class="text-end">Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of carrito; track item.idProducto) {
+                  @let calc = calculado(item.idProducto);
+                  <tr>
+                    <td>
+                      <div class="fw-semibold">{{ item.nombre }}</div>
+                      <small class="text-muted"><code>{{ item.sku }}</code>
+                        @let disp = disponibleEnAlmacen(item.disponiblePorAlmacen);
+                        @if (disp !== null) { · Disp.: {{ disp }} }
+                      </small>
+                      @if (calc?.aviso) {
+                        <div class="small text-warning-emphasis"><i class="bi bi-exclamation-triangle me-1"></i>{{ calc?.aviso }}</div>
+                      }
+                    </td>
+                    <td>
+                      <div class="input-group input-group-sm">
+                        <button class="btn btn-outline-secondary" type="button" (click)="sumar(item, -1)" [disabled]="item.cantidad <= 1">
+                          <i class="bi bi-dash"></i>
+                        </button>
+                        <input type="number" min="1" class="form-control text-center" [value]="item.cantidad"
+                               [class.is-invalid]="!(item.cantidad > 0)" (input)="cambiarCantidad(item, $any($event.target).value)">
+                        <button class="btn btn-outline-secondary" type="button" (click)="sumar(item, 1)">
+                          <i class="bi bi-plus"></i>
+                        </button>
+                      </div>
+                    </td>
+                    <td class="text-end text-nowrap">{{ calc ? (calc.precioUnitario | moneda) : '…' }}</td>
+                    <td class="text-end text-nowrap">
+                      @if (calc && calc.porcentajeDescuento > 0) {
+                        <span class="badge text-bg-success">{{ calc.porcentajeDescuento }} %</span>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td class="text-end text-nowrap fw-semibold">{{ calc ? (calc.subtotal | moneda) : '…' }}</td>
+                    <td class="text-end">
+                      <button class="btn btn-sm btn-link text-danger" title="Quitar" (click)="quitar(item)">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="text-center text-muted py-4">
+            <i class="bi bi-cart fs-2 d-block mb-2"></i>
+            Busque productos para agregarlos a la cotización.
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div class="col-lg-4">
+    <div class="card resumen">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        Resumen
+        @if (simulando) {
+          <small class="text-muted fw-normal"><span class="spinner-border spinner-border-sm me-1"></span>Calculando</small>
+        }
+      </div>
+      <div class="card-body">
+        @if (errorSimulacion) {
+          <div class="alert alert-danger small py-2">{{ errorSimulacion }}</div>
+        }
+
+        @if (simulacion) {
+          <dl class="row mb-0 small">
+            <dt class="col-7 fw-normal text-muted">Subtotal</dt>
+            <dd class="col-5 text-end">{{ simulacion.subtotal | moneda }}</dd>
+            <dt class="col-7 fw-normal text-muted">Descuento por volumen</dt>
+            <dd class="col-5 text-end text-success">- {{ simulacion.descuentoTotal | moneda }}</dd>
+            <dt class="col-7 fw-normal text-muted">Op. gravada</dt>
+            <dd class="col-5 text-end">{{ simulacion.total - simulacion.igv | moneda }}</dd>
+            <dt class="col-7 fw-normal text-muted">IGV (18 %) incluido</dt>
+            <dd class="col-5 text-end">{{ simulacion.igv | moneda }}</dd>
+          </dl>
+          <hr>
+          <div class="d-flex justify-content-between align-items-baseline">
+            <span class="fw-semibold">Total</span>
+            <span class="fs-3 fw-bold text-acento">{{ simulacion.total | moneda }}</span>
+          </div>
+        } @else {
+          <p class="text-muted small mb-0">
+            @if (!cliente) {
+              Seleccione un cliente para ver los precios.
+            } @else if (!carrito.length) {
+              Agregue productos para calcular el total.
+            } @else {
+              Revise las cantidades.
+            }
+          </p>
+        }
+
+        @if (hayAvisosStock) {
+          <div class="alert alert-warning small py-2 mt-3 mb-0">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Hay productos sin stock suficiente en este almacén. Puede guardar, pero el stock se valida al aprobar.
+          </div>
+        }
+      </div>
+      <div class="card-footer bg-white border-0 pt-0 pb-3 d-grid gap-2">
+        <button class="btn btn-acento" [disabled]="!puedeGuardar" (click)="guardar(true)">
+          @if (guardando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          <i class="bi bi-send me-1"></i>Guardar y enviar
+        </button>
+        <button class="btn btn-outline-secondary" [disabled]="!puedeGuardar" (click)="guardar(false)">
+          <i class="bi bi-save me-1"></i>Guardar borrador
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+}

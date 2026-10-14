@@ -1,0 +1,228 @@
+@if (cotizacion; as cot) {
+  <div class="encabezado">
+    <div>
+      <a routerLink="/cotizaciones" class="text-decoration-none small text-muted"><i class="bi bi-arrow-left"></i> Volver a cotizaciones</a>
+      <h1 class="mt-1 d-flex align-items-center gap-2">
+        {{ cot.codigo }} <app-badge-estado [estado]="cot.estado" />
+      </h1>
+    </div>
+
+    <!-- Acciones según el estado -->
+    <div class="d-flex flex-wrap gap-2">
+      @if (estado === 'BORRADOR') {
+        <a class="btn btn-outline-secondary" [routerLink]="['/cotizaciones', cot.idCotizacion, 'editar']">
+          <i class="bi bi-pencil me-1"></i>Editar items
+        </a>
+        <button class="btn btn-acento" [disabled]="procesando" (click)="enviar()">
+          <i class="bi bi-send me-1"></i>Enviar
+        </button>
+      }
+      @if (estado === 'ENVIADA') {
+        <button class="btn btn-outline-danger" [disabled]="procesando" (click)="abrirRechazo()">
+          <i class="bi bi-x-circle me-1"></i>Rechazar
+        </button>
+        <button class="btn btn-success" [disabled]="procesando || !vigente" (click)="aprobar()"
+                [title]="vigente ? '' : 'La cotización ya venció'">
+          @if (procesando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          <i class="bi bi-check2-circle me-1"></i>Aprobar
+        </button>
+      }
+      @if (estado === 'RECHAZADA' || estado === 'VENCIDA') {
+        <button class="btn btn-acento" [disabled]="procesando" (click)="reenviar()"
+                title="Crea un nuevo borrador con los precios actuales">
+          <i class="bi bi-arrow-repeat me-1"></i>Reenviar
+        </button>
+      }
+      <button class="btn btn-outline-secondary" [disabled]="procesando" (click)="duplicar()" title="Copiar como nuevo borrador">
+        <i class="bi bi-copy me-1"></i>Duplicar
+      </button>
+      <button class="btn btn-dark" [disabled]="generandoPdf" (click)="descargarPdf()">
+        @if (generandoPdf) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-file-earmark-pdf me-1"></i> }
+        Descargar PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Avisos -->
+  @if (faltantes.length) {
+    <div class="alert alert-danger">
+      <h6 class="alert-heading"><i class="bi bi-exclamation-octagon me-1"></i>No se pudo aprobar: stock insuficiente</h6>
+      <ul class="mb-0">
+        @for (f of faltantes; track f.idProducto) {
+          <li><strong>{{ f.nombre }}</strong>: solicitado {{ f.solicitado }}, disponible {{ f.disponible }}</li>
+        }
+      </ul>
+      <small class="d-block mt-2">Registre un ingreso de stock o duplique la cotización con menos cantidad.</small>
+    </div>
+  }
+  @if (estado === 'ENVIADA' && !vigente) {
+    <div class="alert alert-warning"><i class="bi bi-clock-history me-1"></i>La cotización ya venció; en breve pasará a VENCIDA.</div>
+  }
+  @if (estado === 'APROBADA') {
+    <div class="alert alert-success">
+      <i class="bi bi-hourglass-split me-1"></i>Aprobada: se está generando el pedido en ms-ventas.
+    </div>
+  }
+  @if (estado === 'CONVERTIDA') {
+    <div class="alert alert-light border">
+      <i class="bi bi-bag-check me-1 text-acento"></i>Esta cotización ya generó su pedido. Búsquelo en
+      <a routerLink="/pedidos">Pedidos / Caja</a> con el código {{ cot.codigo }}.
+    </div>
+  }
+  @if (cot.motivoRechazo) {
+    <div class="alert alert-danger"><strong>Motivo del rechazo:</strong> {{ cot.motivoRechazo }}</div>
+  }
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <!-- Datos -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <small class="text-muted d-block">Cliente</small>
+              <a class="fw-semibold text-decoration-none" [routerLink]="['/clientes', cot.clienteId]">{{ cot.clienteNombre }}</a>
+              @if (cliente) {
+                <div class="small text-muted">{{ cliente.tipoDocumento }} {{ cliente.numeroDocumento }}</div>
+              }
+              <span class="badge mt-1" [class]="cot.tipoCliente === 'CONTRATISTA' ? 'text-bg-dark' : 'text-bg-light border'">
+                Precio {{ cot.tipoCliente === 'CONTRATISTA' ? 'contratista' : 'minorista' }}
+              </span>
+            </div>
+            <div class="col-6 col-md-3">
+              <small class="text-muted d-block">Almacén</small>
+              {{ nombreAlmacen }}
+            </div>
+            <div class="col-6 col-md-3">
+              <small class="text-muted d-block">Canal</small>
+              <i class="bi" [class]="cot.canal === 'ANDROID' ? 'bi-phone' : 'bi-laptop'"></i>
+              {{ cot.canal === 'ANDROID' ? 'App Android' : 'Web' }}
+            </div>
+            <div class="col-6 col-md-3">
+              <small class="text-muted d-block">Creada</small>
+              {{ cot.fechaCreacion | fecha }}
+            </div>
+            <div class="col-6 col-md-3">
+              <small class="text-muted d-block">Vence</small>
+              {{ cot.fechaVencimiento ? (cot.fechaVencimiento | fecha) : '—' }}
+            </div>
+            <div class="col-6 col-md-3">
+              <small class="text-muted d-block">Aprobada</small>
+              {{ cot.fechaAprobacion ? (cot.fechaAprobacion | fecha) : '—' }}
+            </div>
+            @if (cot.cotizacionOrigenId) {
+              <div class="col-6 col-md-3">
+                <small class="text-muted d-block">Copia de</small>
+                <a [routerLink]="['/cotizaciones', cot.cotizacionOrigenId]">Cotización #{{ cot.cotizacionOrigenId }}</a>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="card">
+        <div class="card-header">Productos ({{ cot.items.length }})</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th class="text-end">Cant.</th>
+                  <th class="text-end">P. unit.</th>
+                  <th class="text-end">Dscto.</th>
+                  <th class="text-end">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of cot.items; track item.idProducto) {
+                  <tr>
+                    <td>
+                      <div class="fw-semibold">{{ item.nombreProducto }}</div>
+                      <small class="text-muted"><code>{{ item.sku }}</code></small>
+                      @if (item.aviso) {
+                        <div class="small text-warning-emphasis"><i class="bi bi-exclamation-triangle me-1"></i>{{ item.aviso }}</div>
+                      }
+                    </td>
+                    <td class="text-end">{{ item.cantidad }}</td>
+                    <td class="text-end text-nowrap">{{ item.precioUnitario | moneda }}</td>
+                    <td class="text-end">
+                      @if (item.porcentajeDescuento > 0) {
+                        <span class="badge text-bg-success">{{ item.porcentajeDescuento }} %</span>
+                      } @else { <span class="text-muted">—</span> }
+                    </td>
+                    <td class="text-end text-nowrap fw-semibold">{{ item.subtotal | moneda }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <!-- Totales -->
+      <div class="card mb-4">
+        <div class="card-header">Totales</div>
+        <div class="card-body">
+          <dl class="row mb-0 small">
+            <dt class="col-7 fw-normal text-muted">Subtotal</dt>
+            <dd class="col-5 text-end">{{ cot.subtotal | moneda }}</dd>
+            <dt class="col-7 fw-normal text-muted">Descuento por volumen</dt>
+            <dd class="col-5 text-end text-success">- {{ cot.descuentoTotal | moneda }}</dd>
+            <dt class="col-7 fw-normal text-muted">Op. gravada</dt>
+            <dd class="col-5 text-end">{{ cot.total - cot.igv | moneda }}</dd>
+            <dt class="col-7 fw-normal text-muted">IGV (18 %) incluido</dt>
+            <dd class="col-5 text-end">{{ cot.igv | moneda }}</dd>
+          </dl>
+          <hr>
+          <div class="d-flex justify-content-between align-items-baseline">
+            <span class="fw-semibold">Total</span>
+            <span class="fs-3 fw-bold text-acento">{{ cot.total | moneda }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historial -->
+      <div class="card">
+        <div class="card-header">Historial</div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0 historial">
+            @for (h of cot.historial; track h.idHistorial) {
+              <li>
+                <div class="d-flex align-items-center gap-2">
+                  @if (h.estadoAnterior) {
+                    <app-badge-estado [estado]="h.estadoAnterior" /><i class="bi bi-arrow-right small text-muted"></i>
+                  }
+                  <app-badge-estado [estado]="h.estadoNuevo" />
+                </div>
+                <small class="text-muted d-block mt-1">{{ h.fecha | fecha }} · Usuario #{{ h.usuarioId }}</small>
+                @if (h.comentario) {
+                  <small class="d-block">{{ h.comentario }}</small>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de rechazo -->
+  @if (mostrarRechazo) {
+    <app-modal titulo="Rechazar cotización" (cerrar)="mostrarRechazo = false">
+      <label class="form-label">Motivo del rechazo</label>
+      <textarea class="form-control" rows="3" [formControl]="motivo" placeholder="Ej. Encontró mejor precio en otra ferretería"
+                [class.is-invalid]="invalido(motivo)"></textarea>
+      <div class="invalid-feedback">Indique el motivo (máximo 300 caracteres).</div>
+      <div pie>
+        <button type="button" class="btn btn-light" (click)="mostrarRechazo = false">Cancelar</button>
+        <button type="button" class="btn btn-danger" (click)="rechazar()">Rechazar</button>
+      </div>
+    </app-modal>
+  }
+} @else {
+  <div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</div>
+}

@@ -1,0 +1,33 @@
+.paso {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-acento);
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+/* Lista desplegable de resultados del buscador */
+.resultados {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1010;
+  max-height: 340px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.resumen {
+  position: sticky;
+  top: 80px;
+}
+
+input[type='number']::-webkit-inner-spin-button {
+  appearance: none;
+}

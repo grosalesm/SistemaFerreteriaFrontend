@@ -23,7 +23,29 @@ export const routes: Routes = [
       // La raíz redirige a la pantalla inicial del rol.
       { path: '', pathMatch: 'full', canActivate: [inicioGuard], children: [] },
       { path: 'dashboard', loadComponent: enConstruccion, data: { roles: PERMISOS.dashboard, titulo: 'Dashboard' } },
-      { path: 'cotizaciones', loadComponent: enConstruccion, data: { roles: PERMISOS.cotizaciones, titulo: 'Cotizaciones' } },
+      {
+        path: 'cotizaciones',
+        data: { roles: PERMISOS.cotizaciones },
+        loadComponent: () => import('./features/cotizaciones/cotizaciones.component').then((m) => m.CotizacionesComponent)
+      },
+      {
+        path: 'cotizaciones/nueva',
+        data: { roles: PERMISOS.cotizaciones },
+        loadComponent: () =>
+          import('./features/cotizaciones/cotizacion-form.component').then((m) => m.CotizacionFormComponent)
+      },
+      {
+        path: 'cotizaciones/:id',
+        data: { roles: PERMISOS.cotizaciones },
+        loadComponent: () =>
+          import('./features/cotizaciones/cotizacion-detalle.component').then((m) => m.CotizacionDetalleComponent)
+      },
+      {
+        path: 'cotizaciones/:id/editar',
+        data: { roles: PERMISOS.cotizaciones },
+        loadComponent: () =>
+          import('./features/cotizaciones/cotizacion-form.component').then((m) => m.CotizacionFormComponent)
+      },
       { path: 'pedidos', loadComponent: enConstruccion, data: { roles: PERMISOS.pedidos, titulo: 'Pedidos / Caja' } },
       { path: 'despachos', loadComponent: enConstruccion, data: { roles: PERMISOS.despachos, titulo: 'Despachos' } },
       {
