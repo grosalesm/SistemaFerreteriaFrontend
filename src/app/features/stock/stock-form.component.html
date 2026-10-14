@@ -1,0 +1,54 @@
+<app-modal [titulo]="titulo" (cerrar)="cerrar.emit()">
+  <div class="bg-light rounded p-3 mb-3">
+    <div class="fw-semibold">{{ fila.nombre }}</div>
+    <small class="text-muted"><code>{{ fila.sku }}</code> · {{ fila.almacen }}</small>
+    <div class="row text-center mt-2 small">
+      <div class="col">Física<br><strong>{{ fila.cantidadFisica }}</strong></div>
+      <div class="col">Reservada<br><strong>{{ fila.cantidadReservada }}</strong></div>
+      <div class="col">Disponible<br><strong>{{ fila.disponible }}</strong></div>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <div class="mb-3">
+      @if (tipo === 'ingreso') {
+        <label class="form-label">Cantidad a ingresar ({{ fila.unidadMedida }})</label>
+      } @else {
+        <label class="form-label">Cantidad física contada ({{ fila.unidadMedida }})</label>
+      }
+      <input type="number" min="0" class="form-control" formControlName="cantidad"
+             [class.is-invalid]="invalido(form.controls.cantidad)">
+      <div class="invalid-feedback">
+        @if (tipo === 'ingreso') {
+          Debe ser mayor a 0.
+        } @else {
+          No puede ser menor a la cantidad reservada ({{ fila.cantidadReservada }}).
+        }
+      </div>
+    </div>
+
+    @if (tipo === 'ajuste') {
+      <div class="mb-3">
+        <label class="form-label">Motivo</label>
+        <textarea class="form-control" rows="2" formControlName="motivo" placeholder="Ej. Conteo físico: 5 bolsas rotas"
+                  [class.is-invalid]="invalido(form.controls.motivo)"></textarea>
+        <div class="invalid-feedback">Indique el motivo del ajuste.</div>
+      </div>
+    }
+
+    <div class="small text-muted">
+      Quedará: física <strong>{{ nuevaFisica }}</strong>, disponible
+      <strong [class.text-danger]="nuevoDisponible <= fila.stockMinimo">{{ nuevoDisponible }}</strong>
+      (mínimo {{ fila.stockMinimo }}).
+    </div>
+    <button type="submit" hidden></button>
+  </form>
+
+  <div pie>
+    <button type="button" class="btn btn-light" (click)="cerrar.emit()">Cancelar</button>
+    <button type="button" class="btn btn-acento" [disabled]="guardando" (click)="guardar()">
+      @if (guardando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+      Guardar
+    </button>
+  </div>
+</app-modal>

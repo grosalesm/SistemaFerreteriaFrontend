@@ -1,0 +1,46 @@
+<div class="encabezado">
+  <h1>Categorías</h1>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">Nueva categoría</div>
+      <div class="card-body">
+        <form (ngSubmit)="crear()" novalidate>
+          <label class="form-label">Nombre</label>
+          <input class="form-control mb-3" [formControl]="nombre" placeholder="Ej. Gasfitería"
+                 [class.is-invalid]="invalido(nombre)">
+          <div class="invalid-feedback mt-n2 mb-3">Obligatorio, máximo 50 caracteres.</div>
+          <button type="submit" class="btn btn-acento w-100" [disabled]="guardando">
+            <i class="bi bi-plus-lg me-1"></i>Crear categoría
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <app-tabla-paginada [items]="categorias" [cargando]="cargando" [camposBusqueda]="['nombre']"
+                            placeholder="Buscar categoría...">
+          <ng-template #cabecera>
+            <th style="width: 80px">#</th>
+            <th>Nombre</th>
+            <th>Estado</th>
+          </ng-template>
+          <ng-template #fila let-c>
+            <td class="text-muted">{{ c.idCategoria }}</td>
+            <td class="fw-semibold">{{ c.nombre }}</td>
+            <td>
+              <span class="badge" [class]="c.activo ? 'text-bg-success' : 'text-bg-secondary'">
+                {{ c.activo ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+          </ng-template>
+        </app-tabla-paginada>
+      </div>
+    </div>
+  </div>
+</div>

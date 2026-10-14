@@ -1,0 +1,81 @@
+<div class="encabezado">
+  <h1>Stock</h1>
+  @if (totalCriticos > 0) {
+    <span class="badge text-bg-danger fs-6 fw-normal">
+      <i class="bi bi-exclamation-triangle me-1"></i>{{ totalCriticos }} producto(s) en stock crítico
+    </span>
+  }
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+      <ul class="nav nav-pills">
+        <li class="nav-item">
+          <button class="nav-link" [class.active]="idAlmacen === null" (click)="seleccionarAlmacen(null)">Todos</button>
+        </li>
+        @for (a of almacenes; track a.idAlmacen) {
+          <li class="nav-item">
+            <button class="nav-link" [class.active]="idAlmacen === a.idAlmacen" (click)="seleccionarAlmacen(a.idAlmacen)">
+              {{ a.nombre }} <small class="opacity-75">({{ a.codigo }})</small>
+            </button>
+          </li>
+        }
+      </ul>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" id="criticos" [(ngModel)]="soloCriticos" (ngModelChange)="filtrarCriticos()">
+        <label class="form-check-label" for="criticos">Solo críticos</label>
+      </div>
+    </div>
+
+    <app-tabla-paginada [items]="visibles" [cargando]="cargando" [claseFila]="claseFila"
+                        [camposBusqueda]="['sku', 'nombre']" placeholder="Buscar por SKU o producto..."
+                        [tamanoPagina]="15">
+      <ng-template #cabecera>
+        <th>SKU</th>
+        <th>Producto</th>
+        <th>Almacén</th>
+        <th class="text-end">Física</th>
+        <th class="text-end">Reservada</th>
+        <th class="text-end">Disponible</th>
+        <th class="text-end">Mínimo</th>
+        @if (puedeGestionar) {
+          <th class="text-end">Acciones</th>
+        }
+      </ng-template>
+
+      <ng-template #fila let-f>
+        <td class="text-nowrap"><code>{{ f.sku }}</code></td>
+        <td>
+          {{ f.nombre }}
+          @if (f.critico) {
+            <span class="badge text-bg-danger ms-1">Crítico</span>
+          }
+        </td>
+        <td>{{ f.almacen }}</td>
+        <td class="text-end">{{ f.cantidadFisica }}</td>
+        <td class="text-end">{{ f.cantidadReservada }}</td>
+        <td class="text-end fw-semibold">{{ f.disponible }}</td>
+        <td class="text-end text-muted">{{ f.stockMinimo }}</td>
+        @if (puedeGestionar) {
+          <td class="text-end text-nowrap">
+            <button class="btn btn-sm btn-outline-success me-1" title="Ingreso" (click)="abrir('ingreso', f)">
+              <i class="bi bi-plus-circle"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary me-1" title="Ajuste de inventario" (click)="abrir('ajuste', f)">
+              <i class="bi bi-sliders"></i>
+            </button>
+            <a class="btn btn-sm btn-outline-dark" title="Kardex" [routerLink]="['/stock/kardex', f.idProducto]">
+              <i class="bi bi-journal-text"></i>
+            </a>
+          </td>
+        }
+      </ng-template>
+    </app-tabla-paginada>
+  </div>
+</div>
+
+@if (movimiento) {
+  <app-stock-form [tipo]="movimiento.tipo" [fila]="movimiento.fila"
+                  (guardado)="alGuardar($event)" (cerrar)="movimiento = null" />
+}

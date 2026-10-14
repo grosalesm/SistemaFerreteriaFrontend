@@ -1,0 +1,60 @@
+<app-modal [titulo]="titulo" tamano="lg" (cerrar)="cerrar.emit()">
+  <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Tipo de documento *</label>
+        <select class="form-select" formControlName="tipoDocumento">
+          <option value="DNI">DNI</option>
+          <option value="RUC">RUC</option>
+        </select>
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Número de documento *</label>
+        <input class="form-control" formControlName="numeroDocumento" inputmode="numeric"
+               [maxlength]="esRuc ? 11 : 8" [class.is-invalid]="invalido(form.controls.numeroDocumento)">
+        <div class="invalid-feedback">El {{ esRuc ? 'RUC debe tener 11' : 'DNI debe tener 8' }} dígitos.</div>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">{{ esRuc ? 'Razón social' : 'Nombres y apellidos' }} *</label>
+        <input class="form-control" formControlName="nombreRazonSocial"
+               [class.is-invalid]="invalido(form.controls.nombreRazonSocial)">
+        <div class="invalid-feedback">Obligatorio, máximo 150 caracteres.</div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Teléfono</label>
+        <input class="form-control" formControlName="telefono" [class.is-invalid]="invalido(form.controls.telefono)">
+        <div class="invalid-feedback">Máximo 20 caracteres.</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" formControlName="email" [class.is-invalid]="invalido(form.controls.email)">
+        <div class="invalid-feedback">Ingrese un email válido.</div>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Dirección</label>
+        <input class="form-control" formControlName="direccion" [class.is-invalid]="invalido(form.controls.direccion)">
+        <div class="invalid-feedback">Máximo 200 caracteres.</div>
+      </div>
+
+      @if (!cliente) {
+        <div class="col-12">
+          <small class="text-muted">
+            El cliente se registra como MINORISTA. Solo el administrador puede cambiarlo a CONTRATISTA (requiere RUC).
+          </small>
+        </div>
+      }
+    </div>
+    <button type="submit" hidden></button>
+  </form>
+
+  <div pie>
+    <button type="button" class="btn btn-light" (click)="cerrar.emit()">Cancelar</button>
+    <button type="button" class="btn btn-acento" [disabled]="guardando" (click)="guardar()">
+      @if (guardando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+      Guardar
+    </button>
+  </div>
+</app-modal>

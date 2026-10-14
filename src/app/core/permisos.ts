@@ -12,6 +12,7 @@ export const PERMISOS = {
   productos: ['VENDEDOR', 'ALMACENERO'],
   categorias: ['ADMIN'],
   stock: ['VENDEDOR', 'ALMACENERO'],
+  kardex: ['ALMACENERO'],
   clientes: ['VENDEDOR'],
   usuarios: ['ADMIN']
 } satisfies Record<string, Rol[]>;

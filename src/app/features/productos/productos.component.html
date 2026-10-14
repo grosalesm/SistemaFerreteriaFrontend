@@ -1,0 +1,118 @@
+<div class="encabezado">
+  <h1>Productos</h1>
+  @if (esAdmin) {
+    <button class="btn btn-acento" (click)="editando = null">
+      <i class="bi bi-plus-lg me-1"></i>Nuevo producto
+    </button>
+  }
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" (ngSubmit)="buscar()">
+      <div class="col-md-4">
+        <label class="form-label">Buscar</label>
+        <input class="form-control" name="texto" [(ngModel)]="filtro.texto" placeholder="SKU o nombre">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Categoría</label>
+        <select class="form-select" name="categoria" [(ngModel)]="filtro.idCategoria" (change)="buscar()">
+          <option [ngValue]="null">Todas</option>
+          @for (c of categorias; track c.idCategoria) {
+            <option [ngValue]="c.idCategoria">{{ c.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-auto">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="conStock" name="conStock"
+                 [(ngModel)]="filtro.soloConStock" (change)="buscar()">
+          <label class="form-check-label" for="conStock">Solo con stock</label>
+        </div>
+      </div>
+      @if (esAdmin) {
+        <div class="col-md-auto">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="inactivos" name="inactivos"
+                   [(ngModel)]="filtro.incluirInactivos" (change)="buscar()">
+            <label class="form-check-label" for="inactivos">Incluir inactivos</label>
+          </div>
+        </div>
+      }
+      <div class="col-md-auto ms-md-auto d-flex gap-2">
+        <button type="submit" class="btn btn-dark"><i class="bi bi-search me-1"></i>Buscar</button>
+        <button type="button" class="btn btn-light" (click)="limpiar()">Limpiar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <app-tabla-paginada [items]="productos" [cargando]="cargando" [claseFila]="claseFila"
+                        mensajeVacio="No se encontraron productos.">
+      <ng-template #cabecera>
+        <th>SKU</th>
+        <th>Producto</th>
+        <th>Categoría</th>
+        <th class="text-end">Minorista</th>
+        <th class="text-end">Contratista</th>
+        <th>Descuento</th>
+        @for (a of almacenes; track a.idAlmacen) {
+          <th class="text-end">{{ a.nombre }}</th>
+        }
+        <th class="text-end">Disponible</th>
+        @if (esAdmin) {
+          <th class="text-end">Acciones</th>
+        }
+      </ng-template>
+
+      <ng-template #fila let-p>
+        <td class="text-nowrap"><code>{{ p.sku }}</code></td>
+        <td>
+          <div class="fw-semibold">{{ p.nombre }}</div>
+          <small class="text-muted">{{ p.unidadMedida }}</small>
+          @if (!p.activo) {
+            <span class="badge text-bg-secondary ms-1">Inactivo</span>
+          }
+        </td>
+        <td>{{ nombreCategoria(p.idCategoria) }}</td>
+        <td class="text-end text-nowrap">{{ p.precioMinorista | moneda }}</td>
+        <td class="text-end text-nowrap">{{ p.precioContratista | moneda }}</td>
+        <td class="text-nowrap">
+          @if (p.porcentajeDescuento > 0) {
+            {{ p.porcentajeDescuento }} % desde {{ p.cantidadMinimaDescuento }}
+          } @else {
+            <span class="text-muted">—</span>
+          }
+        </td>
+        @for (a of almacenes; track a.idAlmacen) {
+          <td class="text-end">{{ disponibleEn(p, a.idAlmacen) }}</td>
+        }
+        <td class="text-end fw-semibold" [class.text-danger]="p.disponible <= p.stockMinimo"
+            [title]="'Stock mínimo: ' + p.stockMinimo">
+          {{ p.disponible }}
+          @if (p.disponible <= p.stockMinimo) {
+            <i class="bi bi-exclamation-triangle-fill ms-1"></i>
+          }
+        </td>
+        @if (esAdmin) {
+          <td class="text-end text-nowrap">
+            <button class="btn btn-sm btn-outline-secondary me-1" title="Editar" (click)="editando = p">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm" [class]="p.activo ? 'btn-outline-danger' : 'btn-outline-success'"
+                    [title]="p.activo ? 'Desactivar' : 'Activar'" (click)="cambiarEstado(p)">
+              <i class="bi" [class]="p.activo ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+            </button>
+          </td>
+        }
+      </ng-template>
+    </app-tabla-paginada>
+  </div>
+</div>
+
+@if (editando !== undefined) {
+  <app-producto-form [producto]="editando" [categorias]="categorias"
+                     (guardado)="alGuardar()" (cerrar)="editando = undefined" />
+}
