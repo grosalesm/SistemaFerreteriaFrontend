@@ -1,0 +1,64 @@
+<div class="encabezado">
+  <h1>Usuarios</h1>
+  <button class="btn btn-acento" (click)="editando = null">
+    <i class="bi bi-person-plus me-1"></i>Nuevo usuario
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input" type="checkbox" id="verClientes" [(ngModel)]="verClientes" (ngModelChange)="filtrar()">
+      <label class="form-check-label" for="verClientes">
+        Mostrar cuentas de clientes (app móvil) <span class="text-muted">({{ totalClientes }})</span>
+      </label>
+    </div>
+
+    <app-tabla-paginada [items]="visibles" [cargando]="cargando" [claseFila]="claseFila"
+                        [camposBusqueda]="['username', 'nombreCompleto', 'email', 'rol']"
+                        placeholder="Buscar por usuario, nombre, email o rol...">
+      <ng-template #cabecera>
+        <th>Usuario</th>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Creado</th>
+        <th class="text-end">Acciones</th>
+      </ng-template>
+
+      <ng-template #fila let-u>
+        <td class="fw-semibold">
+          {{ u.username }}
+          @if (esPropio(u)) { <span class="badge text-bg-warning ms-1">Usted</span> }
+        </td>
+        <td>{{ u.nombreCompleto }}</td>
+        <td class="text-muted">{{ u.email }}</td>
+        <td><span class="badge" [class]="colorDe(u)">{{ rolDe(u) }}</span></td>
+        <td>
+          <span class="badge" [class]="u.activo ? 'text-bg-success' : 'text-bg-secondary'">
+            {{ u.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td class="text-nowrap">{{ u.fechaCreacion | fecha: true }}</td>
+        <td class="text-end text-nowrap">
+          @if (u.rol !== 'CLIENTE') {
+            <button class="btn btn-sm btn-outline-secondary me-1" title="Editar" (click)="editando = u">
+              <i class="bi bi-pencil"></i>
+            </button>
+          }
+          @if (!esPropio(u)) {
+            <button class="btn btn-sm" [class]="u.activo ? 'btn-outline-danger' : 'btn-outline-success'"
+                    [title]="u.activo ? 'Desactivar' : 'Activar'" (click)="cambiarEstado(u)">
+              <i class="bi" [class]="u.activo ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+            </button>
+          }
+        </td>
+      </ng-template>
+    </app-tabla-paginada>
+  </div>
+</div>
+
+@if (editando !== undefined) {
+  <app-usuario-form [usuario]="editando" (guardado)="alGuardar()" (cerrar)="editando = undefined" />
+}

@@ -1,6 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Notificacion } from '../../core/models/notificacion.model';
 import { NotificacionService } from '../../core/services/notificacion.service';
+import { WsService } from '../../core/services/ws.service';
 import { FechaPipe } from '../../shared/pipes/fecha.pipe';
 
 /** Campana de la navbar: contador de no leídas y lista desplegable. */
@@ -12,6 +14,8 @@ import { FechaPipe } from '../../shared/pipes/fecha.pipe';
 })
 export class CampanaComponent implements OnInit {
   private notificacionService = inject(NotificacionService);
+  private ws = inject(WsService);
+  private destroyRef = inject(DestroyRef);
 
   notificaciones: Notificacion[] = [];
 
@@ -21,6 +25,13 @@ export class CampanaComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+
+    // Cada aviso del WebSocket entra arriba de la lista y suma al contador.
+    this.ws.avisos$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((aviso) => {
+      if (!this.notificaciones.some((n) => n.idNotificacion === aviso.idNotificacion)) {
+        this.notificaciones = [aviso, ...this.notificaciones];
+      }
+    });
   }
 
   cargar(): void {

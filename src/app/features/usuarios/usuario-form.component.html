@@ -1,0 +1,58 @@
+<app-modal [titulo]="titulo" (cerrar)="cerrar.emit()">
+  <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Usuario *</label>
+        <input class="form-control" formControlName="username" autocomplete="off"
+               [class.is-invalid]="invalido(form.controls.username)">
+        <div class="invalid-feedback">Obligatorio, máximo 50 caracteres.</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Rol *</label>
+        <select class="form-select" formControlName="rol">
+          @for (r of roles; track r) {
+            <option [value]="r">{{ nombreRol[r] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Nombre completo *</label>
+        <input class="form-control" formControlName="nombreCompleto"
+               [class.is-invalid]="invalido(form.controls.nombreCompleto)">
+        <div class="invalid-feedback">Obligatorio, máximo 100 caracteres.</div>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Email *</label>
+        <input type="email" class="form-control" formControlName="email"
+               [class.is-invalid]="invalido(form.controls.email)">
+        <div class="invalid-feedback">Ingrese un email válido.</div>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Contraseña {{ usuario ? '' : '*' }}</label>
+        <div class="input-group has-validation">
+          <input class="form-control" formControlName="password" autocomplete="new-password"
+                 [type]="verPassword ? 'text' : 'password'" [class.is-invalid]="invalido(form.controls.password)">
+          <button type="button" class="btn btn-outline-secondary" (click)="verPassword = !verPassword">
+            <i class="bi" [class]="verPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+          </button>
+          <div class="invalid-feedback">La contraseña es obligatoria.</div>
+        </div>
+        @if (usuario) {
+          <div class="form-text">Déjela vacía para conservar la contraseña actual.</div>
+        }
+      </div>
+    </div>
+    <button type="submit" hidden></button>
+  </form>
+
+  <div pie>
+    <button type="button" class="btn btn-light" (click)="cerrar.emit()">Cancelar</button>
+    <button type="button" class="btn btn-acento" [disabled]="guardando" (click)="guardar()">
+      @if (guardando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+      Guardar
+    </button>
+  </div>
+</app-modal>

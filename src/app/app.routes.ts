@@ -4,10 +4,6 @@ import { rolGuard } from './core/guards/rol.guard';
 import { PERMISOS } from './core/permisos';
 import { LayoutComponent } from './layout/layout.component';
 
-// Mientras se construyen las fases, los módulos apuntan a un marcador temporal.
-const enConstruccion = () =>
-  import('./features/en-construccion/en-construccion.component').then((m) => m.EnConstruccionComponent);
-
 export const routes: Routes = [
   {
     path: 'login',
@@ -22,7 +18,11 @@ export const routes: Routes = [
     children: [
       // La raíz redirige a la pantalla inicial del rol.
       { path: '', pathMatch: 'full', canActivate: [inicioGuard], children: [] },
-      { path: 'dashboard', loadComponent: enConstruccion, data: { roles: PERMISOS.dashboard, titulo: 'Dashboard' } },
+      {
+        path: 'dashboard',
+        data: { roles: PERMISOS.dashboard },
+        loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent)
+      },
       {
         path: 'cotizaciones',
         data: { roles: PERMISOS.cotizaciones },
@@ -92,7 +92,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/clientes/cliente-detalle.component').then((m) => m.ClienteDetalleComponent)
       },
-      { path: 'usuarios', loadComponent: enConstruccion, data: { roles: PERMISOS.usuarios, titulo: 'Usuarios' } }
+      {
+        path: 'usuarios',
+        data: { roles: PERMISOS.usuarios },
+        loadComponent: () => import('./features/usuarios/usuarios.component').then((m) => m.UsuariosComponent)
+      }
     ]
   },
   { path: '**', redirectTo: '' }

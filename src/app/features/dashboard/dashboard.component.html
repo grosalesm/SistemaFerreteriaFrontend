@@ -1,0 +1,183 @@
+<div class="encabezado">
+  <h1>Dashboard</h1>
+  <button class="btn btn-light" (click)="cargar()" [disabled]="cargando">
+    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+  </button>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="kpi-titulo"><i class="bi bi-cash-coin"></i>Ventas de hoy</div>
+        <div class="kpi-valor">{{ resumen ? (resumen.montoHoy | moneda) : '—' }}</div>
+        <small class="text-muted">{{ resumen?.pedidosHoy ?? 0 }} pedido(s)</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="kpi-titulo"><i class="bi bi-calendar3"></i>Ventas del mes</div>
+        <div class="kpi-valor">{{ resumen ? (resumen.montoMes | moneda) : '—' }}</div>
+        <small class="text-muted">{{ resumen?.pedidosMes ?? 0 }} pedido(s) · últimos 7 días: {{ resumen ? (resumen.montoUltimos7Dias | moneda) : '—' }}</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="kpi-titulo"><i class="bi bi-graph-up-arrow"></i>Tasa de conversión</div>
+        <div class="kpi-valor">{{ resumen ? resumen.tasaConversionMes.toFixed(1) + ' %' : '—' }}</div>
+        <small class="text-muted">pedidos pagados / cotizaciones enviadas del mes</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="kpi-titulo"><i class="bi bi-file-earmark-text"></i>Cotizaciones del mes</div>
+        <div class="kpi-valor">{{ resumen?.cotizacionesEnviadasMes ?? '—' }}</div>
+        <small class="text-muted">enviadas a clientes</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Gráfico de ventas -->
+  <div class="col-xl-8">
+    <div class="card h-100">
+      <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          Ventas de los últimos 30 días
+          <small class="d-block text-muted fw-normal">{{ totalPeriodo | moneda }} en {{ pedidosPeriodo }} pedido(s)</small>
+        </div>
+        <button class="btn btn-sm btn-light" (click)="verTabla = !verTabla">
+          <i class="bi me-1" [class]="verTabla ? 'bi-graph-up' : 'bi-table'"></i>{{ verTabla ? 'Ver gráfico' : 'Ver tabla' }}
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="contenedor-grafico" [hidden]="verTabla">
+          <canvas #lienzo aria-label="Gráfico de ventas por día" role="img"></canvas>
+        </div>
+        @if (verTabla) {
+          <div class="tabla-ventas">
+            <table class="table table-sm mb-0">
+              <thead class="table-light"><tr><th>Día</th><th class="text-end">Pedidos</th><th class="text-end">Monto</th></tr></thead>
+              <tbody>
+                @for (v of ventas; track v.fecha) {
+                  <tr [class.text-muted]="!v.pedidos">
+                    <td>{{ v.fecha | fecha: true }}</td>
+                    <td class="text-end">{{ v.pedidos }}</td>
+                    <td class="text-end">{{ v.monto | moneda }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- En vivo -->
+  <div class="col-xl-4">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><span class="punto-vivo me-2"></span>En vivo</span>
+        <small class="text-muted fw-normal">{{ enVivo.length }} aviso(s)</small>
+      </div>
+      <div class="card-body p-0 lista-vivo">
+        @for (a of enVivo; track a.idNotificacion) {
+          <div class="d-flex gap-2 px-3 py-2 border-bottom aviso">
+            <i class="bi mt-1" [class]="icono(a.tipo)"></i>
+            <div class="flex-grow-1">
+              <div class="small fw-semibold">{{ a.titulo }}</div>
+              <div class="small text-muted">{{ a.mensaje }}</div>
+            </div>
+            <small class="text-muted text-nowrap">{{ (a.fecha | fecha).slice(11) }}</small>
+          </div>
+        } @empty {
+          <div class="text-center text-muted small py-5 px-3">
+            <i class="bi bi-broadcast fs-3 d-block mb-2"></i>
+            Aquí aparecerán las cotizaciones, pagos, despachos y alertas de stock a medida que ocurran.
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Top productos -->
+  <div class="col-lg-6 col-xl-4">
+    <div class="card h-100">
+      <div class="card-header">Top 5 productos</div>
+      <div class="card-body">
+        @for (p of topProductos; track p.idProducto; let i = $index) {
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small">
+              <span class="text-truncate me-2"><span class="text-muted me-1">{{ i + 1 }}.</span>{{ p.nombre }}</span>
+              <span class="fw-semibold text-nowrap">{{ p.montoAprobado | moneda }}</span>
+            </div>
+            <div class="barra mt-1"><div [style.width.%]="porcentaje(p.montoAprobado, topProductos[0].montoAprobado)"></div></div>
+            <small class="text-muted">{{ p.unidadesAprobadas }} unidades</small>
+          </div>
+        } @empty {
+          <p class="text-muted small mb-0">Aún no hay cotizaciones aprobadas.</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Top clientes -->
+  <div class="col-lg-6 col-xl-4">
+    <div class="card h-100">
+      <div class="card-header">Top 5 clientes</div>
+      <div class="card-body">
+        @for (c of topClientes; track c.clienteId; let i = $index) {
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small">
+              <a class="text-truncate me-2 text-decoration-none text-dark" [routerLink]="['/clientes', c.clienteId]">
+                <span class="text-muted me-1">{{ i + 1 }}.</span>{{ c.nombre }}
+              </a>
+              <span class="fw-semibold text-nowrap">{{ c.montoComprado | moneda }}</span>
+            </div>
+            <div class="barra mt-1"><div [style.width.%]="porcentaje(c.montoComprado, topClientes[0].montoComprado)"></div></div>
+            <small class="text-muted">{{ c.compras }} compra(s)</small>
+          </div>
+        } @empty {
+          <p class="text-muted small mb-0">Aún no hay compras registradas.</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Alertas de stock -->
+  <div class="col-xl-4">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        Alertas de stock crítico
+        <a routerLink="/stock" class="small fw-normal">Ver stock</a>
+      </div>
+      <div class="card-body p-0">
+        @for (a of resumen?.alertasStock ?? []; track a.idNotificacion) {
+          <div class="d-flex gap-2 px-3 py-2 border-bottom">
+            <i class="bi bi-exclamation-triangle-fill text-danger mt-1"></i>
+            <div>
+              <div class="small">{{ a.mensaje }}</div>
+              <small class="text-muted">{{ a.fecha | fecha }}</small>
+            </div>
+          </div>
+        } @empty {
+          <div class="text-center text-muted small py-5">
+            <i class="bi bi-check-circle text-success fs-3 d-block mb-2"></i>
+            Sin alertas de stock.
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
