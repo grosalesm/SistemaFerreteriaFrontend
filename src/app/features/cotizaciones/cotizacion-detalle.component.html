@@ -65,8 +65,12 @@
   }
   @if (estado === 'CONVERTIDA') {
     <div class="alert alert-light border">
-      <i class="bi bi-bag-check me-1 text-acento"></i>Esta cotización ya generó su pedido. Búsquelo en
-      <a routerLink="/pedidos">Pedidos / Caja</a> con el código {{ cot.codigo }}.
+      <i class="bi bi-bag-check me-1 text-acento"></i>Esta cotización ya generó su pedido.
+      @if (idPedido) {
+        <a [routerLink]="['/pedidos', idPedido]" class="fw-semibold">Ver pedido</a>
+      } @else {
+        Búsquelo en <a routerLink="/pedidos">Pedidos / Caja</a> con el código {{ cot.codigo }}.
+      }
     </div>
   }
   @if (cot.motivoRechazo) {

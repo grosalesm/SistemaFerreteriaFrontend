@@ -8,6 +8,7 @@ import { Cotizacion } from '../../core/models/cotizacion.model';
 import { Almacen } from '../../core/models/producto.model';
 import { ClienteService } from '../../core/services/cliente.service';
 import { CotizacionService } from '../../core/services/cotizacion.service';
+import { PedidoService } from '../../core/services/pedido.service';
 import { ProductoService } from '../../core/services/producto.service';
 import { BadgeEstadoComponent } from '../../shared/badge-estado/badge-estado.component';
 import { confirmar } from '../../shared/confirmar';
@@ -33,12 +34,15 @@ export class CotizacionDetalleComponent implements OnInit, OnDestroy {
   private cotizacionService = inject(CotizacionService);
   private clienteService = inject(ClienteService);
   private productoService = inject(ProductoService);
+  private pedidoService = inject(PedidoService);
   private pdfService = inject(PdfService);
   private toast = inject(ToastService);
 
   cotizacion: Cotizacion | null = null;
   cliente: Cliente | null = null;
   almacenes: Almacen[] = [];
+  /** Pedido generado (solo CONVERTIDA). */
+  idPedido: number | null = null;
   procesando = false;
   generandoPdf = false;
 
@@ -63,11 +67,22 @@ export class CotizacionDetalleComponent implements OnInit, OnDestroy {
 
   cargar(id: number): void {
     this.faltantes = [];
+    this.idPedido = null;
     this.cotizacionService.obtener(id).subscribe((cot) => {
       this.cotizacion = cot;
       if (this.cliente?.idCliente !== cot.clienteId) {
         this.clienteService.obtener(cot.clienteId).subscribe((c) => (this.cliente = c));
       }
+      if (cot.estado === 'CONVERTIDA') {
+        this.buscarPedido(cot);
+      }
+    });
+  }
+
+  /** La respuesta de la cotización no trae el id del pedido: se busca entre los pedidos del cliente. */
+  private buscarPedido(cot: Cotizacion): void {
+    this.pedidoService.listar({ clienteId: cot.clienteId }).subscribe((pedidos) => {
+      this.idPedido = pedidos.find((p) => p.cotizacionId === cot.idCotizacion)?.idPedido ?? null;
     });
   }
 

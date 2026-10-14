@@ -1,0 +1,69 @@
+<app-modal titulo="Emitir comprobante" (cerrar)="cerrar.emit()">
+  <form [formGroup]="form" (ngSubmit)="emitir()" novalidate>
+    @if (datosFijos) {
+      <!-- El tipo sale del documento del cliente: no se elige -->
+      <div class="d-flex align-items-center gap-3 border rounded p-3 mb-3">
+        <i class="bi fs-2 text-acento" [class]="esFactura ? 'bi-file-earmark-text' : 'bi-receipt'"></i>
+        <div>
+          <div class="fw-semibold">{{ esFactura ? 'Factura' : 'Boleta de venta' }}</div>
+          <small class="text-muted">
+            Serie {{ esFactura ? 'F001' : 'B001' }} · el cliente tiene {{ esFactura ? 'RUC' : 'DNI' }}
+          </small>
+        </div>
+        <i class="bi bi-lock ms-auto text-muted" title="Datos tomados de la ficha del cliente"></i>
+      </div>
+    } @else {
+    <div class="alert alert-light border small py-2">
+      <i class="bi bi-info-circle me-1"></i>No se pudo consultar la ficha del cliente: elija el tipo según su documento.
+    </div>
+    <div class="row g-2 mb-3">
+      <div class="col-6">
+        <input type="radio" class="btn-check" formControlName="tipo" id="tipo-boleta" value="BOLETA">
+        <label class="btn btn-outline-secondary w-100 py-2" for="tipo-boleta">
+          <i class="bi bi-receipt d-block fs-4"></i>Boleta
+          <small class="d-block opacity-75">con DNI · serie B001</small>
+        </label>
+      </div>
+      <div class="col-6">
+        <input type="radio" class="btn-check" formControlName="tipo" id="tipo-factura" value="FACTURA">
+        <label class="btn btn-outline-secondary w-100 py-2" for="tipo-factura">
+          <i class="bi bi-file-earmark-text d-block fs-4"></i>Factura
+          <small class="d-block opacity-75">con RUC · serie F001</small>
+        </label>
+      </div>
+    </div>
+    }
+
+    <div class="mb-3">
+      <label class="form-label">{{ esFactura ? 'RUC' : 'DNI' }} del cliente *</label>
+      <input class="form-control" formControlName="documentoCliente" inputmode="numeric" [maxlength]="esFactura ? 11 : 8"
+             [class.is-invalid]="invalido(form.controls.documentoCliente)">
+      <div class="invalid-feedback">El {{ esFactura ? 'RUC debe tener 11' : 'DNI debe tener 8' }} dígitos.</div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">{{ esFactura ? 'Razón social' : 'Nombre' }}</label>
+      <input class="form-control" formControlName="razonSocial" [placeholder]="pedido.clienteNombre"
+             [class.is-invalid]="invalido(form.controls.razonSocial)">
+      @if (datosFijos) {
+        <div class="form-text">Datos tomados de la ficha del cliente.</div>
+      } @else {
+        <div class="form-text">Si lo deja vacío se usa el nombre del cliente.</div>
+      }
+    </div>
+
+    <div class="d-flex justify-content-between bg-light rounded p-2 px-3">
+      <span class="text-muted">Total del comprobante</span>
+      <strong>{{ pedido.total | moneda }}</strong>
+    </div>
+    <button type="submit" hidden></button>
+  </form>
+
+  <div pie>
+    <button type="button" class="btn btn-light" (click)="cerrar.emit()">Cancelar</button>
+    <button type="button" class="btn btn-acento" [disabled]="guardando" (click)="emitir()">
+      @if (guardando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+      Emitir {{ esFactura ? 'factura' : 'boleta' }}
+    </button>
+  </div>
+</app-modal>

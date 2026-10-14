@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import type { jsPDF } from 'jspdf';
 import { Cliente } from '../core/models/cliente.model';
 import { Cotizacion } from '../core/models/cotizacion.model';
+import { Comprobante, NOMBRE_METODO_PAGO, Pedido } from '../core/models/pedido.model';
 import { formatearFecha } from './pipes/fecha.pipe';
 import { formatearMoneda } from './pipes/moneda.pipe';
 
@@ -101,6 +102,88 @@ export class PdfService {
 
     this.numerarPaginas(doc);
     doc.save(`${cot.codigo}.pdf`);
+  }
+
+  /** Boleta o factura de un pedido pagado. */
+  async comprobante(pedido: Pedido, comp: Comprobante): Promise<void> {
+    const { jsPDF } = await import('jspdf');
+    const { autoTable } = await import('jspdf-autotable');
+
+    const doc = new jsPDF();
+    const ancho = doc.internal.pageSize.getWidth();
+    const esFactura = comp.tipo === 'FACTURA';
+
+    this.encabezado(doc, esFactura ? 'FACTURA' : 'BOLETA DE VENTA', comp.numeroComprobante);
+
+    // Adquiriente (izquierda) y datos de la venta (derecha)
+    const y = 46;
+    this.etiqueta(doc, esFactura ? 'Razón social' : 'Cliente', 14, y);
+    doc.setFont('helvetica', 'bold').text(comp.razonSocial, 14, y + 5, { maxWidth: 110 });
+    doc.setFont('helvetica', 'normal');
+    this.etiqueta(doc, esFactura ? 'RUC' : 'DNI', 14, y + 12);
+    doc.text(comp.documentoCliente, 14, y + 17);
+    if (pedido.tipoEntrega === 'DELIVERY' && pedido.direccionEntrega) {
+      this.etiqueta(doc, 'Dirección de entrega', 14, y + 23);
+      doc.text(pedido.direccionEntrega, 14, y + 28, { maxWidth: 110 });
+    }
+
+    const xDer = ancho - 70;
+    this.etiqueta(doc, 'Fecha de emisión', xDer, y);
+    doc.text(formatearFecha(comp.fechaEmision), xDer, y + 5);
+    this.etiqueta(doc, 'Pedido / Cotización', xDer, y + 11);
+    doc.text(`${pedido.codigo} / ${pedido.codigoCotizacion}`, xDer, y + 16);
+    if (pedido.pago) {
+      this.etiqueta(doc, 'Forma de pago', xDer, y + 22);
+      const operacion = pedido.pago.numeroOperacion ? ` · Op. ${pedido.pago.numeroOperacion}` : '';
+      doc.text(`Contado · ${NOMBRE_METODO_PAGO[pedido.pago.metodo]}${operacion}`, xDer, y + 27);
+    }
+
+    autoTable(doc, {
+      startY: y + 38,
+      head: [['#', 'SKU', 'Descripción', 'Cant.', 'P. unit.', 'Importe']],
+      body: pedido.items.map((item, i) => [
+        i + 1,
+        item.sku,
+        item.nombreProducto,
+        item.cantidad,
+        formatearMoneda(item.precioUnitario),
+        formatearMoneda(item.subtotal)
+      ]),
+      headStyles: { fillColor: OSCURO, fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      alternateRowStyles: { fillColor: [248, 248, 248] },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' }
+      }
+    });
+
+    let yFinal = this.finalTabla(doc) + 8;
+    yFinal = this.bloqueTotales(
+      doc,
+      [
+        ['Op. gravada', formatearMoneda(comp.subtotal)],
+        ['IGV (18 %)', formatearMoneda(comp.igv)]
+      ],
+      comp.total,
+      yFinal
+    );
+
+    doc.setFontSize(8).setTextColor(...GRIS);
+    doc.text(
+      [
+        `Representación impresa de la ${esFactura ? 'factura' : 'boleta de venta'} ${comp.numeroComprobante}.`,
+        'Los precios unitarios incluyen IGV y descuentos por volumen. Importes en soles (S/).',
+        '¡Gracias por su compra!'
+      ],
+      14,
+      yFinal + 12
+    );
+
+    this.numerarPaginas(doc);
+    doc.save(`${comp.numeroComprobante}.pdf`);
   }
 
   // ---------- Partes comunes ----------

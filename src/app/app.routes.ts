@@ -46,8 +46,21 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/cotizaciones/cotizacion-form.component').then((m) => m.CotizacionFormComponent)
       },
-      { path: 'pedidos', loadComponent: enConstruccion, data: { roles: PERMISOS.pedidos, titulo: 'Pedidos / Caja' } },
-      { path: 'despachos', loadComponent: enConstruccion, data: { roles: PERMISOS.despachos, titulo: 'Despachos' } },
+      {
+        path: 'pedidos',
+        data: { roles: PERMISOS.pedidos },
+        loadComponent: () => import('./features/pedidos/pedidos.component').then((m) => m.PedidosComponent)
+      },
+      {
+        path: 'pedidos/:id',
+        data: { roles: PERMISOS.pedidos },
+        loadComponent: () => import('./features/pedidos/pedido-detalle.component').then((m) => m.PedidoDetalleComponent)
+      },
+      {
+        path: 'despachos',
+        data: { roles: PERMISOS.despachos },
+        loadComponent: () => import('./features/despachos/despachos.component').then((m) => m.DespachosComponent)
+      },
       {
         path: 'productos',
         data: { roles: PERMISOS.productos },

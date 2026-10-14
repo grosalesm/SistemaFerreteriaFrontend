@@ -1,0 +1,248 @@
+@if (pedido; as p) {
+  <div class="encabezado">
+    <div>
+      <a routerLink="/pedidos" class="text-decoration-none small text-muted"><i class="bi bi-arrow-left"></i> Volver a pedidos</a>
+      <h1 class="mt-1 d-flex align-items-center gap-2">{{ p.codigo }} <app-badge-estado [estado]="p.estado" /></h1>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+      @if (puedeAnular) {
+        <button class="btn btn-outline-danger" (click)="abrirAnulacion()">
+          <i class="bi bi-x-octagon me-1"></i>Anular
+        </button>
+      }
+      @if (puedeEmitir) {
+        <button class="btn btn-outline-dark" (click)="modal = 'comprobante'">
+          <i class="bi bi-receipt me-1"></i>Emitir comprobante
+        </button>
+      }
+      @if (p.comprobante) {
+        <button class="btn btn-dark" [disabled]="generandoPdf" (click)="descargarComprobante()">
+          @if (generandoPdf) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="bi bi-file-earmark-pdf me-1"></i> }
+          Descargar comprobante
+        </button>
+      }
+      @if (puedePagar) {
+        <button class="btn btn-acento" (click)="modal = 'pago'">
+          <i class="bi bi-cash-coin me-1"></i>Registrar pago
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Avisos por estado -->
+  @if (p.estado === 'PENDIENTE_PAGO') {
+    <div class="alert alert-warning">
+      <i class="bi bi-clock me-1"></i>Debe pagarse hasta el <strong>{{ p.fechaLimitePago | fecha }}</strong>;
+      si no, vence y se libera el stock reservado.
+    </div>
+  }
+  @if (p.estado === 'ANULADO') {
+    <div class="alert alert-danger">
+      <strong>Pedido anulado.</strong> {{ p.motivoAnulacion }}
+      @if (p.pago?.devuelto) { <span class="d-block small mt-1">El pago fue marcado como devuelto.</span> }
+    </div>
+  }
+  @if (p.estado === 'VENCIDO') {
+    <div class="alert alert-secondary">No se pagó dentro de las 24 h; la reserva de stock fue liberada.</div>
+  }
+  @if (puedeEmitir) {
+    <div class="alert alert-info"><i class="bi bi-info-circle me-1"></i>El pedido está pagado pero aún no tiene comprobante.</div>
+  }
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <!-- Datos -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <small class="text-muted d-block">Cliente</small>
+              <span class="fw-semibold">{{ p.clienteNombre }}</span>
+              @if (cliente) {
+                <div class="small text-muted">{{ cliente.tipoDocumento }} {{ cliente.numeroDocumento }}
+                  @if (cliente.telefono) { · {{ cliente.telefono }} }
+                </div>
+              }
+            </div>
+            <div class="col-6 col-md-3">
+              <small class="text-muted d-block">Cotización</small>
+              @if (verCotizacion) {
+                <a [routerLink]="['/cotizaciones', p.cotizacionId]">{{ p.codigoCotizacion }}</a>
+              } @else {
+                {{ p.codigoCotizacion }}
+              }
+            </div>
+            <div class="col-6 col-md-3">
+              <small class="text-muted d-block">Almacén</small>
+              {{ nombreAlmacen }}
+            </div>
+            <div class="col-md-6">
+              <small class="text-muted d-block">Entrega</small>
+              @if (p.tipoEntrega === 'DELIVERY') {
+                <i class="bi bi-truck me-1"></i>Delivery · {{ p.direccionEntrega }}
+              } @else if (p.tipoEntrega === 'RECOJO') {
+                <i class="bi bi-shop me-1"></i>Recojo en tienda
+              } @else {
+                <span class="text-muted">Se define al registrar el pago</span>
+              }
+            </div>
+            @if (p.repartidor) {
+              <div class="col-md-6">
+                <small class="text-muted d-block">Repartidor</small>
+                {{ p.repartidor }}
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Items -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between">
+          Productos ({{ p.items.length }})
+          @if (p.estado === 'EN_PREPARACION') {
+            <small class="text-muted fw-normal">{{ itemsPreparados }} de {{ p.items.length }} preparados</small>
+          }
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th class="text-end">Cant.</th>
+                  <th class="text-end">P. unit.</th>
+                  <th class="text-end">Importe</th>
+                  <th class="text-center">Preparado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of p.items; track item.idItem) {
+                  <tr>
+                    <td>
+                      <div class="fw-semibold">{{ item.nombreProducto }}</div>
+                      <small class="text-muted"><code>{{ item.sku }}</code></small>
+                    </td>
+                    <td class="text-end">{{ item.cantidad }}</td>
+                    <td class="text-end text-nowrap">{{ item.precioUnitario | moneda }}</td>
+                    <td class="text-end text-nowrap fw-semibold">{{ item.subtotal | moneda }}</td>
+                    <td class="text-center">
+                      <i class="bi" [class]="item.preparado ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted'"></i>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" class="text-end fw-semibold">Total (IGV incluido)</td>
+                  <td class="text-end fw-bold text-acento text-nowrap">{{ p.total | moneda }}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <!-- Seguimiento -->
+      <div class="card mb-4">
+        <div class="card-header">Seguimiento</div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            @for (paso of pasos; track paso.texto) {
+              <li class="d-flex gap-3 mb-3" [class.text-muted]="!paso.fecha">
+                <i class="bi fs-5" [class]="paso.icono + (paso.fecha ? ' text-acento' : '')"></i>
+                <div>
+                  <div [class.fw-semibold]="paso.fecha">{{ paso.texto }}</div>
+                  <small>{{ paso.fecha ? (paso.fecha | fecha) : 'Pendiente' }}</small>
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- Pago -->
+      <div class="card mb-4">
+        <div class="card-header">Pago</div>
+        <div class="card-body">
+          @if (p.pago; as pago) {
+            <dl class="row small mb-0">
+              <dt class="col-5 fw-normal text-muted">Método</dt>
+              <dd class="col-7">{{ metodos[pago.metodo] }}</dd>
+              <dt class="col-5 fw-normal text-muted">Monto</dt>
+              <dd class="col-7 fw-semibold">{{ pago.monto | moneda }}</dd>
+              @if (pago.numeroOperacion) {
+                <dt class="col-5 fw-normal text-muted">N.° operación</dt>
+                <dd class="col-7">{{ pago.numeroOperacion }}</dd>
+              }
+              <dt class="col-5 fw-normal text-muted">Fecha</dt>
+              <dd class="col-7">{{ pago.fecha | fecha }}</dd>
+              <dt class="col-5 fw-normal text-muted">Cajero</dt>
+              <dd class="col-7 mb-0">Usuario #{{ pago.cajeroId }}</dd>
+            </dl>
+            @if (pago.devuelto) {
+              <span class="badge text-bg-danger mt-2">Devuelto</span>
+            }
+          } @else {
+            <p class="text-muted small mb-0">Aún no se registra el pago.</p>
+          }
+        </div>
+      </div>
+
+      <!-- Comprobante -->
+      <div class="card">
+        <div class="card-header">Comprobante</div>
+        <div class="card-body">
+          @if (p.comprobante; as c) {
+            <div class="fw-semibold fs-5">{{ c.numeroComprobante }}</div>
+            <small class="text-muted d-block mb-2">{{ c.tipo === 'FACTURA' ? 'Factura' : 'Boleta de venta' }} · {{ c.fechaEmision | fecha }}</small>
+            <dl class="row small mb-0">
+              <dt class="col-5 fw-normal text-muted">{{ c.tipo === 'FACTURA' ? 'RUC' : 'DNI' }}</dt>
+              <dd class="col-7">{{ c.documentoCliente }}</dd>
+              <dt class="col-5 fw-normal text-muted">A nombre de</dt>
+              <dd class="col-7">{{ c.razonSocial }}</dd>
+              <dt class="col-5 fw-normal text-muted">Op. gravada</dt>
+              <dd class="col-7">{{ c.subtotal | moneda }}</dd>
+              <dt class="col-5 fw-normal text-muted">IGV</dt>
+              <dd class="col-7">{{ c.igv | moneda }}</dd>
+              <dt class="col-5 fw-normal text-muted">Total</dt>
+              <dd class="col-7 fw-semibold mb-0">{{ c.total | moneda }}</dd>
+            </dl>
+          } @else {
+            <p class="text-muted small mb-0">Sin comprobante emitido.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modales -->
+  @if (modal === 'pago') {
+    <app-pago-form [pedido]="p" [direccionSugerida]="cliente?.direccion ?? null"
+                   (pagado)="alPagar($event)" (cerrar)="modal = null" />
+  }
+  @if (modal === 'comprobante') {
+    <app-comprobante-form [pedido]="p" [cliente]="cliente" (emitido)="alEmitir($event)" (cerrar)="modal = null" />
+  }
+  @if (modal === 'anular') {
+    <app-modal titulo="Anular pedido" (cerrar)="modal = null">
+      <label class="form-label">Motivo de la anulación</label>
+      <textarea class="form-control" rows="3" [formControl]="motivo" placeholder="Ej. Cliente desistió de la compra"
+                [class.is-invalid]="invalido(motivo)"></textarea>
+      <div class="invalid-feedback">Indique el motivo (máximo 300 caracteres).</div>
+      <div pie>
+        <button type="button" class="btn btn-light" (click)="modal = null">Cancelar</button>
+        <button type="button" class="btn btn-danger" [disabled]="anulando" (click)="anular()">
+          @if (anulando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Anular pedido
+        </button>
+      </div>
+    </app-modal>
+  }
+} @else {
+  <div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</div>
+}
