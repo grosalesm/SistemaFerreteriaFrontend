@@ -26,10 +26,37 @@ export const routes: Routes = [
       { path: 'cotizaciones', loadComponent: enConstruccion, data: { roles: PERMISOS.cotizaciones, titulo: 'Cotizaciones' } },
       { path: 'pedidos', loadComponent: enConstruccion, data: { roles: PERMISOS.pedidos, titulo: 'Pedidos / Caja' } },
       { path: 'despachos', loadComponent: enConstruccion, data: { roles: PERMISOS.despachos, titulo: 'Despachos' } },
-      { path: 'productos', loadComponent: enConstruccion, data: { roles: PERMISOS.productos, titulo: 'Productos' } },
-      { path: 'categorias', loadComponent: enConstruccion, data: { roles: PERMISOS.categorias, titulo: 'Categorías' } },
-      { path: 'stock', loadComponent: enConstruccion, data: { roles: PERMISOS.stock, titulo: 'Stock' } },
-      { path: 'clientes', loadComponent: enConstruccion, data: { roles: PERMISOS.clientes, titulo: 'Clientes' } },
+      {
+        path: 'productos',
+        data: { roles: PERMISOS.productos },
+        loadComponent: () => import('./features/productos/productos.component').then((m) => m.ProductosComponent)
+      },
+      {
+        path: 'categorias',
+        data: { roles: PERMISOS.categorias },
+        loadComponent: () => import('./features/categorias/categorias.component').then((m) => m.CategoriasComponent)
+      },
+      {
+        path: 'stock',
+        data: { roles: PERMISOS.stock },
+        loadComponent: () => import('./features/stock/stock.component').then((m) => m.StockComponent)
+      },
+      {
+        path: 'stock/kardex/:idProducto',
+        data: { roles: PERMISOS.kardex },
+        loadComponent: () => import('./features/stock/kardex.component').then((m) => m.KardexComponent)
+      },
+      {
+        path: 'clientes',
+        data: { roles: PERMISOS.clientes },
+        loadComponent: () => import('./features/clientes/clientes.component').then((m) => m.ClientesComponent)
+      },
+      {
+        path: 'clientes/:id',
+        data: { roles: PERMISOS.clientes },
+        loadComponent: () =>
+          import('./features/clientes/cliente-detalle.component').then((m) => m.ClienteDetalleComponent)
+      },
       { path: 'usuarios', loadComponent: enConstruccion, data: { roles: PERMISOS.usuarios, titulo: 'Usuarios' } }
     ]
   },

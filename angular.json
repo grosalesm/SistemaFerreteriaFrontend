@@ -45,6 +45,17 @@
               "zone.js"
             ],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "sweetalert2",
+              "jspdf",
+              "jspdf-autotable",
+              "canvg",
+              "core-js",
+              "raf",
+              "rgbcolor",
+              "html2canvas",
+              "dompurify"
+            ],
             "assets": [
               {
                 "glob": "**/*",

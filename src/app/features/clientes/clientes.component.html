@@ -1,0 +1,96 @@
+<div class="encabezado">
+  <h1>Clientes</h1>
+  <button class="btn btn-acento" (click)="editando = null">
+    <i class="bi bi-person-plus me-1"></i>Nuevo cliente
+  </button>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" (ngSubmit)="buscar()">
+      <div class="col-md-5">
+        <label class="form-label">Buscar</label>
+        <input class="form-control" name="texto" [(ngModel)]="texto" placeholder="Nombre, razón social o documento">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" name="tipo" [(ngModel)]="tipoCliente" (change)="buscar()">
+          <option [ngValue]="null">Todos</option>
+          <option value="MINORISTA">Minorista</option>
+          <option value="CONTRATISTA">Contratista</option>
+        </select>
+      </div>
+      <div class="col-md-auto">
+        <button type="submit" class="btn btn-dark"><i class="bi bi-search me-1"></i>Buscar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <app-tabla-paginada [items]="clientes" [cargando]="cargando" [claseFila]="claseFila"
+                        mensajeVacio="No se encontraron clientes.">
+      <ng-template #cabecera>
+        <th>Documento</th>
+        <th>Nombre / Razón social</th>
+        <th>Tipo</th>
+        <th>Contacto</th>
+        <th>Estado</th>
+        <th class="text-end">Acciones</th>
+      </ng-template>
+
+      <ng-template #fila let-c>
+        <td class="text-nowrap">
+          <small class="text-muted">{{ c.tipoDocumento }}</small><br>{{ c.numeroDocumento }}
+        </td>
+        <td>
+          <a class="fw-semibold text-decoration-none text-dark" [routerLink]="['/clientes', c.idCliente]">
+            {{ c.nombreRazonSocial }}
+          </a>
+          @if (c.direccion) {
+            <br><small class="text-muted">{{ c.direccion }}</small>
+          }
+        </td>
+        <td>
+          <span class="badge" [class]="c.tipoCliente === 'CONTRATISTA' ? 'text-bg-dark' : 'text-bg-light border'">
+            {{ c.tipoCliente === 'CONTRATISTA' ? 'Contratista' : 'Minorista' }}
+          </span>
+        </td>
+        <td class="small">
+          @if (c.telefono) { <div><i class="bi bi-telephone me-1"></i>{{ c.telefono }}</div> }
+          @if (c.email) { <div><i class="bi bi-envelope me-1"></i>{{ c.email }}</div> }
+          @if (!c.telefono && !c.email) { <span class="text-muted">—</span> }
+        </td>
+        <td>
+          <span class="badge" [class]="c.activo ? 'text-bg-success' : 'text-bg-secondary'">
+            {{ c.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td class="text-end text-nowrap">
+          <a class="btn btn-sm btn-outline-dark me-1" title="Ver detalle" [routerLink]="['/clientes', c.idCliente]">
+            <i class="bi bi-eye"></i>
+          </a>
+          <button class="btn btn-sm btn-outline-secondary me-1" title="Editar" (click)="editando = c">
+            <i class="bi bi-pencil"></i>
+          </button>
+          @if (esAdmin) {
+            <button class="btn btn-sm btn-outline-primary me-1"
+                    [title]="c.tipoCliente === 'CONTRATISTA' ? 'Cambiar a minorista' : 'Cambiar a contratista'"
+                    (click)="cambiarTipo(c)">
+              <i class="bi bi-arrow-left-right"></i>
+            </button>
+            <button class="btn btn-sm" [class]="c.activo ? 'btn-outline-danger' : 'btn-outline-success'"
+                    [title]="c.activo ? 'Desactivar' : 'Activar'" (click)="cambiarEstado(c)">
+              <i class="bi" [class]="c.activo ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+            </button>
+          }
+        </td>
+      </ng-template>
+    </app-tabla-paginada>
+  </div>
+</div>
+
+@if (editando !== undefined) {
+  <app-cliente-form [cliente]="editando" (guardado)="alGuardar()" (cerrar)="editando = undefined" />
+}

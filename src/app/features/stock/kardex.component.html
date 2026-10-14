@@ -1,0 +1,56 @@
+<div class="encabezado">
+  <div>
+    <a routerLink="/stock" class="text-decoration-none small text-muted"><i class="bi bi-arrow-left"></i> Volver a stock</a>
+    <h1 class="mt-1">Kardex</h1>
+  </div>
+</div>
+
+@if (producto) {
+  <div class="card mb-4">
+    <div class="card-body d-flex flex-wrap gap-4">
+      <div>
+        <small class="text-muted d-block">Producto</small>
+        <strong>{{ producto.nombre }}</strong> <code class="ms-1">{{ producto.sku }}</code>
+      </div>
+      <div>
+        <small class="text-muted d-block">Disponible total</small>
+        <strong>{{ producto.disponible }} {{ producto.unidadMedida }}</strong>
+      </div>
+      @for (d of producto.disponiblePorAlmacen; track d.idAlmacen) {
+        <div>
+          <small class="text-muted d-block">{{ nombreAlmacen(d.idAlmacen) }}</small>
+          <strong>{{ d.disponible }}</strong>
+        </div>
+      }
+      <div>
+        <small class="text-muted d-block">Stock mínimo</small>
+        <strong>{{ producto.stockMinimo }}</strong>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="card">
+  <div class="card-body">
+    <app-tabla-paginada [items]="movimientos" [cargando]="cargando" [tamanoPagina]="15"
+                        [camposBusqueda]="['referencia', 'tipo']" placeholder="Buscar por referencia o tipo..."
+                        mensajeVacio="El producto no tiene movimientos.">
+      <ng-template #cabecera>
+        <th>Fecha</th>
+        <th>Tipo</th>
+        <th>Almacén</th>
+        <th class="text-end">Cantidad</th>
+        <th class="text-end">Saldo físico</th>
+        <th>Referencia</th>
+      </ng-template>
+      <ng-template #fila let-m>
+        <td class="text-nowrap">{{ m.fecha | fecha }}</td>
+        <td><span class="badge" [class]="tipo(m).clase">{{ tipo(m).texto }}</span></td>
+        <td>{{ nombreAlmacen(m.idAlmacen) }}</td>
+        <td class="text-end">{{ tipo(m).signo }}{{ m.cantidad }}</td>
+        <td class="text-end fw-semibold">{{ m.saldoFisico }}</td>
+        <td class="text-muted">{{ m.referencia || '—' }}</td>
+      </ng-template>
+    </app-tabla-paginada>
+  </div>
+</div>
