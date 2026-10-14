@@ -91,7 +91,10 @@ export class StockComponent implements OnInit {
   /** Reemplaza la fila con la respuesta del ajuste o ingreso. */
   alGuardar(stock: Stock): void {
     this.movimiento = null;
-    this.filas = this.filas.map((f) => (f.idStock === stock.idStock ? this.armarFila(stock) : f));
+    // La respuesta de ingreso / ajuste trae productoActivo en null: se conserva el de la fila.
+    this.filas = this.filas.map((f) =>
+      f.idStock === stock.idStock ? this.armarFila({ ...stock, productoActivo: stock.productoActivo ?? f.productoActivo }) : f
+    );
     this.filtrarCriticos();
   }
 

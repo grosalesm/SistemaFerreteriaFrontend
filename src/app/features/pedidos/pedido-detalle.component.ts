@@ -48,13 +48,15 @@ export class PedidoDetalleComponent implements OnInit {
   puedeCobrar = this.auth.tieneRol(['CAJERO']);
   esAdmin = this.auth.tieneRol(['ADMIN']);
   verCotizacion = this.auth.tieneRol(PERMISOS.cotizaciones);
-  /** El CAJERO no tiene acceso a /api/clientes. */
-  private verCliente = this.auth.tieneRol(PERMISOS.clientes);
+  /** El CAJERO solo puede leer la ficha por id (GET /api/clientes/{id}); la necesita para el comprobante. */
+  private verCliente = this.auth.tieneRol([...PERMISOS.clientes, 'CAJERO']);
 
   readonly metodos = NOMBRE_METODO_PAGO;
 
   pedido: Pedido | null = null;
   cliente: Cliente | null = null;
+  /** Mientras carga la ficha no se abre el comprobante, para que salga con el tipo bloqueado. */
+  cargandoCliente = false;
   almacenes: Almacen[] = [];
 
   modal: 'pago' | 'comprobante' | 'anular' | null = null;
@@ -73,7 +75,15 @@ export class PedidoDetalleComponent implements OnInit {
     this.pedidoService.obtener(id).subscribe((pedido) => {
       this.pedido = pedido;
       if (this.verCliente && !this.cliente) {
-        this.clienteService.obtener(pedido.clienteId).subscribe((c) => (this.cliente = c));
+        this.cargandoCliente = true;
+        this.clienteService.obtener(pedido.clienteId).subscribe({
+          next: (c) => {
+            this.cliente = c;
+            this.cargandoCliente = false;
+          },
+          // Sin ficha, el comprobante cae al selector de tipo.
+          error: () => (this.cargandoCliente = false)
+        });
       }
     });
   }
@@ -96,13 +106,19 @@ export class PedidoDetalleComponent implements OnInit {
     return this.esAdmin && (this.pedido?.estado === 'PENDIENTE_PAGO' || this.pedido?.estado === 'PAGADO');
   }
 
+  /** Quién preparó el pedido; en registros antiguos solo se conoce el id. */
+  private almacenero(p: Pedido): string | undefined {
+    if (p.almaceneroNombre) return p.almaceneroNombre;
+    return p.almaceneroId ? `Usuario #${p.almaceneroId}` : undefined;
+  }
+
   /** Línea de tiempo del pedido (solo los pasos con fecha). */
-  get pasos(): { texto: string; fecha: string | null; icono: string }[] {
+  get pasos(): { texto: string; fecha: string | null; icono: string; detalle?: string }[] {
     const p = this.pedido!;
     return [
       { texto: 'Pedido creado', fecha: p.fechaCreacion, icono: 'bi-bag' },
       { texto: 'Pagado', fecha: p.fechaPago, icono: 'bi-cash-coin' },
-      { texto: 'En preparación', fecha: p.fechaPreparacion, icono: 'bi-box-seam' },
+      { texto: 'En preparación', fecha: p.fechaPreparacion, icono: 'bi-box-seam', detalle: this.almacenero(p) },
       { texto: 'Despachado', fecha: p.fechaDespacho, icono: 'bi-truck' },
       { texto: 'Entregado', fecha: p.fechaEntrega, icono: 'bi-check2-all' }
     ];

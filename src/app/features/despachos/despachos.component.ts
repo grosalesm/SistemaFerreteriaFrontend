@@ -10,11 +10,19 @@ import { esInvalido } from '../../shared/form.util';
 import { FechaPipe } from '../../shared/pipes/fecha.pipe';
 import { ToastService } from '../../shared/toast/toast.service';
 
-type Pestana = 'pendientes' | 'despachados';
+type Pestana = 'pendientes' | 'despachados' | 'entregados';
+
+/** Fecha local en formato yyyy-MM-dd. */
+function hoyIso(): string {
+  const hoy = new Date();
+  const dos = (n: number) => String(n).padStart(2, '0');
+  return `${hoy.getFullYear()}-${dos(hoy.getMonth() + 1)}-${dos(hoy.getDate())}`;
+}
 
 /**
  * Despachos (ADMIN, ALMACENERO):
  * PAGADO -> preparar -> EN_PREPARACION -> checklist -> despachar -> DESPACHADO -> entregar -> ENTREGADO.
+ * La pestaña "Entregados hoy" es solo de consulta.
  */
 @Component({
   selector: 'app-despachos',
@@ -30,6 +38,7 @@ export class DespachosComponent implements OnInit {
   pestana: Pestana = 'pendientes';
   pendientes: Pedido[] = [];
   despachados: Pedido[] = [];
+  entregados: Pedido[] = [];
   almacenes: Almacen[] = [];
   cargando = true;
 
@@ -47,12 +56,18 @@ export class DespachosComponent implements OnInit {
     this.cargando = true;
     forkJoin({
       pendientes: this.pedidoService.despachosPendientes(),
-      despachados: this.pedidoService.listar({ estado: 'DESPACHADO' })
+      despachados: this.pedidoService.listar({ estado: 'DESPACHADO' }),
+      entregados: this.pedidoService.listar({ estado: 'ENTREGADO' })
     }).subscribe({
-      next: ({ pendientes, despachados }) => {
+      next: ({ pendientes, despachados, entregados }) => {
         // Los más antiguos primero: se atienden en orden de pago.
         this.pendientes = pendientes.sort((a, b) => (a.fechaPago ?? '').localeCompare(b.fechaPago ?? ''));
         this.despachados = despachados.sort((a, b) => (a.fechaDespacho ?? '').localeCompare(b.fechaDespacho ?? ''));
+        // Los filtros desde/hasta van por fecha de creación, así que el "hoy" se filtra por fecha de entrega aquí.
+        const hoy = hoyIso();
+        this.entregados = entregados
+          .filter((p) => p.fechaEntrega?.startsWith(hoy))
+          .sort((a, b) => (b.fechaEntrega ?? '').localeCompare(a.fechaEntrega ?? ''));
         this.cargando = false;
         // Mantiene la selección si el pedido sigue en la lista actual.
         const id = this.seleccionado?.idPedido;
@@ -63,7 +78,14 @@ export class DespachosComponent implements OnInit {
   }
 
   get lista(): Pedido[] {
-    return this.pestana === 'pendientes' ? this.pendientes : this.despachados;
+    if (this.pestana === 'pendientes') return this.pendientes;
+    return this.pestana === 'despachados' ? this.despachados : this.entregados;
+  }
+
+  /** Quién preparó el pedido; en registros antiguos solo se conoce el id. */
+  almacenero(p: Pedido): string | null {
+    if (p.almaceneroNombre) return p.almaceneroNombre;
+    return p.almaceneroId ? `Usuario #${p.almaceneroId}` : null;
   }
 
   cambiarPestana(p: Pestana): void {

@@ -12,8 +12,13 @@
         </button>
       }
       @if (puedeEmitir) {
-        <button class="btn btn-outline-dark" (click)="modal = 'comprobante'">
-          <i class="bi bi-receipt me-1"></i>Emitir comprobante
+        <button class="btn btn-outline-dark" [disabled]="cargandoCliente" (click)="modal = 'comprobante'">
+          @if (cargandoCliente) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          } @else {
+            <i class="bi bi-receipt me-1"></i>
+          }
+          Emitir comprobante
         </button>
       }
       @if (p.comprobante) {
@@ -158,6 +163,9 @@
                 <div>
                   <div [class.fw-semibold]="paso.fecha">{{ paso.texto }}</div>
                   <small>{{ paso.fecha ? (paso.fecha | fecha) : 'Pendiente' }}</small>
+                  @if (paso.fecha && paso.detalle) {
+                    <small class="d-block text-muted"><i class="bi bi-person me-1"></i>{{ paso.detalle }}</small>
+                  }
                 </div>
               </li>
             }
@@ -182,7 +190,7 @@
               <dt class="col-5 fw-normal text-muted">Fecha</dt>
               <dd class="col-7">{{ pago.fecha | fecha }}</dd>
               <dt class="col-5 fw-normal text-muted">Cajero</dt>
-              <dd class="col-7 mb-0">Usuario #{{ pago.cajeroId }}</dd>
+              <dd class="col-7 mb-0">{{ pago.cajeroNombre ?? 'Usuario #' + pago.cajeroId }}</dd>
             </dl>
             @if (pago.devuelto) {
               <span class="badge text-bg-danger mt-2">Devuelto</span>

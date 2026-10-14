@@ -5,6 +5,8 @@ export interface Stock {
   cantidadFisica: number;
   cantidadReservada: number;
   disponible: number;
+  /** Viene en GET /api/stock y /criticos; null en respuestas de ingreso / ajuste. */
+  productoActivo: boolean | null;
 }
 
 /** Fija la cantidad física (inventario). No puede ser menor a la reservada. */

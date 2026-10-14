@@ -48,6 +48,9 @@
         <td class="text-nowrap"><code>{{ f.sku }}</code></td>
         <td>
           {{ f.nombre }}
+          @if (f.productoActivo === false) {
+            <span class="badge text-bg-secondary ms-1">Inactivo</span>
+          }
           @if (f.critico) {
             <span class="badge text-bg-danger ms-1">Crítico</span>
           }

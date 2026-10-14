@@ -18,7 +18,7 @@ const PATRON: Record<TipoComprobante, RegExp> = {
  * Emitir comprobante (CAJERO, ADMIN) de un pedido pagado. Solo uno por pedido.
  * - Con la ficha del cliente: el tipo sale de su documento (DNI -> boleta, RUC -> factura)
  *   y los datos quedan bloqueados.
- * - Sin la ficha (el CAJERO no tiene acceso a /api/clientes): se elige el tipo y se escriben los datos.
+ * - Sin la ficha (si su consulta falla): se elige el tipo y se escriben los datos.
  */
 @Component({
   selector: 'app-comprobante-form',

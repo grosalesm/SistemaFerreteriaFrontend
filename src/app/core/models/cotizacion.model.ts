@@ -20,7 +20,10 @@ export interface HistorialCotizacion {
   idHistorial: number;
   estadoAnterior: EstadoCotizacion | null;
   estadoNuevo: EstadoCotizacion;
-  usuarioId: number;
+  /** null en cambios automáticos (vencimiento, conversión a pedido). */
+  usuarioId: number | null;
+  /** null en registros antiguos y en cambios automáticos. */
+  usuarioNombre: string | null;
   fecha: string;
   comentario: string | null;
 }

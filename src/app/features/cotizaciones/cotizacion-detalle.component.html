@@ -202,7 +202,7 @@
                   }
                   <app-badge-estado [estado]="h.estadoNuevo" />
                 </div>
-                <small class="text-muted d-block mt-1">{{ h.fecha | fecha }} · Usuario #{{ h.usuarioId }}</small>
+                <small class="text-muted d-block mt-1">{{ h.fecha | fecha }} · {{ h.usuarioNombre ?? (h.usuarioId ? 'Usuario #' + h.usuarioId : 'Sistema') }}</small>
                 @if (h.comentario) {
                   <small class="d-block">{{ h.comentario }}</small>
                 }

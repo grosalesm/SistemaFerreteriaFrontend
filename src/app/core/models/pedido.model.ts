@@ -35,6 +35,8 @@ export interface Pago {
   monto: number;
   numeroOperacion: string | null;
   cajeroId: number;
+  /** null en registros antiguos. */
+  cajeroNombre: string | null;
   fecha: string;
   devuelto: boolean;
 }
@@ -74,6 +76,8 @@ export interface Pedido {
   fechaDespacho: string | null;
   fechaEntrega: string | null;
   almaceneroId: number | null;
+  /** Quien preparó el pedido; null en registros antiguos. */
+  almaceneroNombre: string | null;
   motivoAnulacion: string | null;
   items: ItemPedido[];
   pago: Pago | null;
