@@ -1,0 +1,60 @@
+<app-modal titulo="Registrar pago" (cerrar)="cerrar.emit()">
+  <div class="text-center bg-light rounded p-3 mb-3">
+    <small class="text-muted d-block">Monto a cobrar · {{ pedido.codigo }}</small>
+    <div class="fs-2 fw-bold text-acento">{{ pedido.total | moneda }}</div>
+    <small class="text-muted">Pago al contado por el total del pedido</small>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+    <label class="form-label">Método de pago</label>
+    <div class="row g-2 mb-3">
+      @for (m of metodos; track m[0]) {
+        <div class="col-6">
+          <input type="radio" class="btn-check" formControlName="metodo" [id]="'metodo-' + m[0]" [value]="m[0]">
+          <label class="btn btn-outline-secondary w-100" [for]="'metodo-' + m[0]">
+            <i class="bi me-1" [class]="iconos[m[0]]"></i>{{ m[1] }}
+          </label>
+        </div>
+      }
+    </div>
+
+    @if (!esEfectivo) {
+      <div class="mb-3">
+        <label class="form-label">Número de operación *</label>
+        <input class="form-control" formControlName="numeroOperacion" placeholder="Ej. 00458721"
+               [class.is-invalid]="invalido(form.controls.numeroOperacion)">
+        <div class="invalid-feedback">Obligatorio para pagos que no son en efectivo.</div>
+      </div>
+    }
+
+    <label class="form-label">Tipo de entrega</label>
+    <div class="row g-2 mb-3">
+      <div class="col-6">
+        <input type="radio" class="btn-check" formControlName="tipoEntrega" id="entrega-recojo" value="RECOJO">
+        <label class="btn btn-outline-secondary w-100" for="entrega-recojo"><i class="bi bi-shop me-1"></i>Recojo en tienda</label>
+      </div>
+      <div class="col-6">
+        <input type="radio" class="btn-check" formControlName="tipoEntrega" id="entrega-delivery" value="DELIVERY">
+        <label class="btn btn-outline-secondary w-100" for="entrega-delivery"><i class="bi bi-truck me-1"></i>Delivery</label>
+      </div>
+    </div>
+
+    @if (esDelivery) {
+      <div class="mb-2">
+        <label class="form-label">Dirección de entrega *</label>
+        <textarea class="form-control" rows="2" formControlName="direccionEntrega"
+                  [class.is-invalid]="invalido(form.controls.direccionEntrega)"></textarea>
+        <div class="invalid-feedback">Indique la dirección (máximo 250 caracteres).</div>
+      </div>
+    }
+    <button type="submit" hidden></button>
+  </form>
+
+  <div pie>
+    <button type="button" class="btn btn-light" (click)="cerrar.emit()">Cancelar</button>
+    <button type="button" class="btn btn-acento" [disabled]="guardando" (click)="registrar()">
+      @if (guardando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+      <i class="bi bi-cash-coin me-1"></i>Registrar pago
+    </button>
+  </div>
+</app-modal>

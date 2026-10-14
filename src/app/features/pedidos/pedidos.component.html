@@ -1,0 +1,85 @@
+<div class="encabezado">
+  <h1>Pedidos / Caja</h1>
+  <small class="text-muted">Los pedidos se generan al aprobar una cotización.</small>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" (ngSubmit)="buscar()">
+      <div class="col-md-3">
+        <label class="form-label">Estado</label>
+        <select class="form-select" name="estado" [(ngModel)]="filtro.estado" (change)="buscar()">
+          <option [ngValue]="null">Todos</option>
+          @for (e of estados; track e) {
+            <option [ngValue]="e">{{ textoEstado(e) }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Desde</label>
+        <input type="date" class="form-control" name="desde" [(ngModel)]="filtro.desde">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Hasta</label>
+        <input type="date" class="form-control" name="hasta" [(ngModel)]="filtro.hasta">
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-dark flex-grow-1"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+        <button type="button" class="btn btn-light" (click)="limpiar()">Limpiar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <app-tabla-paginada [items]="pedidos" [cargando]="cargando"
+                        [camposBusqueda]="['codigo', 'codigoCotizacion', 'clienteNombre']"
+                        placeholder="Buscar por pedido, cotización o cliente..."
+                        mensajeVacio="No hay pedidos con esos filtros.">
+      <ng-template #cabecera>
+        <th>Pedido</th>
+        <th>Cliente</th>
+        <th>Creado</th>
+        <th>Entrega</th>
+        <th>Estado</th>
+        <th>Comprobante</th>
+        <th class="text-end">Total</th>
+        <th></th>
+      </ng-template>
+
+      <ng-template #fila let-p>
+        <td class="text-nowrap">
+          <a class="fw-semibold text-decoration-none" [routerLink]="['/pedidos', p.idPedido]">{{ p.codigo }}</a>
+          <small class="d-block text-muted">{{ p.codigoCotizacion }}</small>
+        </td>
+        <td>{{ p.clienteNombre }}</td>
+        <td class="text-nowrap">{{ p.fechaCreacion | fecha }}</td>
+        <td>
+          @if (p.tipoEntrega === 'DELIVERY') {
+            <i class="bi bi-truck me-1"></i>Delivery
+          } @else if (p.tipoEntrega === 'RECOJO') {
+            <i class="bi bi-shop me-1"></i>Recojo
+          } @else {
+            <span class="text-muted">—</span>
+          }
+        </td>
+        <td>
+          <app-badge-estado [estado]="p.estado" />
+          @if (p.estado === 'PENDIENTE_PAGO') {
+            <small class="d-block mt-1" [class]="horasParaPagar(p) < 3 ? 'text-danger' : 'text-muted'">
+              <i class="bi bi-clock me-1"></i>{{ horasParaPagar(p) }} h para pagar
+            </small>
+          }
+        </td>
+        <td class="text-nowrap">{{ p.comprobante?.numeroComprobante || '—' }}</td>
+        <td class="text-end text-nowrap fw-semibold">{{ p.total | moneda }}</td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-dark" [routerLink]="['/pedidos', p.idPedido]" title="Ver detalle">
+            <i class="bi bi-eye"></i>
+          </a>
+        </td>
+      </ng-template>
+    </app-tabla-paginada>
+  </div>
+</div>

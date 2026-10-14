@@ -1,0 +1,153 @@
+<div class="encabezado">
+  <h1>Despachos</h1>
+  <button class="btn btn-light" (click)="cargar()" [disabled]="cargando">
+    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+  </button>
+</div>
+
+<ul class="nav nav-pills mb-3">
+  <li class="nav-item">
+    <button class="nav-link" [class.active]="pestana === 'pendientes'" (click)="cambiarPestana('pendientes')">
+      Por preparar / despachar <span class="badge text-bg-light ms-1">{{ pendientes.length }}</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" [class.active]="pestana === 'despachados'" (click)="cambiarPestana('despachados')">
+      Por entregar <span class="badge text-bg-light ms-1">{{ despachados.length }}</span>
+    </button>
+  </li>
+</ul>
+
+<div class="row g-4">
+  <!-- Lista -->
+  <div class="col-lg-5">
+    @if (cargando) {
+      <div class="text-center text-muted py-5"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</div>
+    } @else {
+      <div class="d-grid gap-2">
+        @for (p of lista; track p.idPedido) {
+          <button type="button" class="card tarjeta-pedido text-start" [class.activa]="seleccionado?.idPedido === p.idPedido"
+                  (click)="seleccionar(p)">
+            <div class="card-body py-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="fw-semibold">{{ p.codigo }}</div>
+                  <small class="text-muted">{{ p.clienteNombre }}</small>
+                </div>
+                <app-badge-estado [estado]="p.estado" />
+              </div>
+              <div class="d-flex flex-wrap gap-3 small text-muted mt-2">
+                <span>
+                  <i class="bi me-1" [class]="p.tipoEntrega === 'DELIVERY' ? 'bi-truck' : 'bi-shop'"></i>
+                  {{ p.tipoEntrega === 'DELIVERY' ? 'Delivery' : 'Recojo' }}
+                </span>
+                <span><i class="bi bi-building me-1"></i>{{ nombreAlmacen(p.idAlmacen) }}</span>
+                <span><i class="bi bi-box-seam me-1"></i>{{ preparados(p) }}/{{ p.items.length }} items</span>
+                @if (pestana === 'pendientes') {
+                  <span><i class="bi bi-cash me-1"></i>{{ p.fechaPago | fecha }}</span>
+                } @else {
+                  <span><i class="bi bi-send me-1"></i>{{ p.fechaDespacho | fecha }}</span>
+                }
+              </div>
+            </div>
+          </button>
+        } @empty {
+          <div class="card">
+            <div class="card-body text-center text-muted py-5">
+              <i class="bi bi-check2-circle fs-2 d-block mb-2"></i>
+              {{ pestana === 'pendientes' ? 'No hay pedidos por preparar.' : 'No hay pedidos en camino.' }}
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Panel del pedido -->
+  <div class="col-lg-7">
+    @if (seleccionado; as p) {
+      <div class="card panel">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>{{ p.codigo }} · {{ p.clienteNombre }}</span>
+          <app-badge-estado [estado]="p.estado" />
+        </div>
+        <div class="card-body">
+          <div class="bg-light rounded p-3 mb-3 small">
+            @if (p.tipoEntrega === 'DELIVERY') {
+              <div><i class="bi bi-truck me-1"></i><strong>Delivery</strong> a {{ p.direccionEntrega }}</div>
+            } @else {
+              <div><i class="bi bi-shop me-1"></i><strong>Recojo en tienda</strong></div>
+            }
+            <div class="text-muted mt-1">Almacén: {{ nombreAlmacen(p.idAlmacen) }}
+              @if (p.repartidor) { · Repartidor: {{ p.repartidor }} }
+            </div>
+          </div>
+
+          <!-- Checklist -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Checklist de items</h6>
+            @if (p.estado === 'EN_PREPARACION' && !todosPreparados(p)) {
+              <button class="btn btn-sm btn-outline-success" [disabled]="procesando" (click)="marcarTodos()">
+                <i class="bi bi-check-all me-1"></i>Marcar todos
+              </button>
+            }
+          </div>
+          <ul class="list-group mb-3">
+            @for (item of p.items; track item.idItem) {
+              <li class="list-group-item d-flex align-items-center gap-3" [class.list-group-item-success]="item.preparado">
+                <input class="form-check-input fs-5 m-0" type="checkbox" [id]="'item-' + item.idItem"
+                       [checked]="item.preparado"
+                       [disabled]="item.preparado || p.estado !== 'EN_PREPARACION' || procesando"
+                       (change)="marcarItem(item)">
+                <label class="flex-grow-1" [for]="'item-' + item.idItem">
+                  <span class="fw-semibold">{{ item.nombreProducto }}</span>
+                  <small class="d-block text-muted"><code>{{ item.sku }}</code></small>
+                </label>
+                <span class="fs-5 fw-semibold">× {{ item.cantidad }}</span>
+              </li>
+            }
+          </ul>
+
+          <!-- Acciones según el estado -->
+          @switch (p.estado) {
+            @case ('PAGADO') {
+              <button class="btn btn-acento w-100" [disabled]="procesando" (click)="preparar()">
+                <i class="bi bi-box-seam me-1"></i>Empezar preparación
+              </button>
+            }
+            @case ('EN_PREPARACION') {
+              @if (p.tipoEntrega === 'DELIVERY') {
+                <div class="mb-2">
+                  <label class="form-label">Repartidor *</label>
+                  <input class="form-control" [formControl]="repartidor" placeholder="Nombre del repartidor"
+                         [class.is-invalid]="invalido(repartidor)">
+                  <div class="invalid-feedback">Indique el repartidor.</div>
+                </div>
+              }
+              <button class="btn btn-acento w-100" [disabled]="procesando || !todosPreparados(p)" (click)="despachar()">
+                <i class="bi bi-send me-1"></i>{{ p.tipoEntrega === 'DELIVERY' ? 'Despachar' : 'Listo para recojo' }}
+              </button>
+              @if (!todosPreparados(p)) {
+                <small class="text-muted d-block text-center mt-2">Marque todos los items para poder despachar.</small>
+              } @else {
+                <small class="text-muted d-block text-center mt-2">Al despachar se descuenta el stock físico.</small>
+              }
+            }
+            @case ('DESPACHADO') {
+              <button class="btn btn-success w-100" [disabled]="procesando" (click)="entregar()">
+                <i class="bi bi-check2-all me-1"></i>Confirmar entrega
+              </button>
+            }
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="card">
+        <div class="card-body text-center text-muted py-5">
+          <i class="bi bi-hand-index fs-2 d-block mb-2"></i>
+          Seleccione un pedido de la lista.
+        </div>
+      </div>
+    }
+  </div>
+</div>

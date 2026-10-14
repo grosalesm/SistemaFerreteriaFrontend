@@ -11,6 +11,13 @@ export type MetodoPago = 'EFECTIVO' | 'TARJETA' | 'YAPE_PLIN' | 'TRANSFERENCIA';
 export type TipoEntrega = 'RECOJO' | 'DELIVERY';
 export type TipoComprobante = 'BOLETA' | 'FACTURA';
 
+export const NOMBRE_METODO_PAGO: Record<MetodoPago, string> = {
+  EFECTIVO: 'Efectivo',
+  TARJETA: 'Tarjeta',
+  YAPE_PLIN: 'Yape / Plin',
+  TRANSFERENCIA: 'Transferencia'
+};
+
 export interface ItemPedido {
   idItem: number;
   idProducto: number;

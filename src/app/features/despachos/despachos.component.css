@@ -1,0 +1,22 @@
+.tarjeta-pedido {
+  border-left: 4px solid transparent;
+  cursor: pointer;
+}
+
+.tarjeta-pedido:hover {
+  border-left-color: #ffcf9e;
+}
+
+.tarjeta-pedido.activa {
+  border-left-color: var(--color-acento);
+  background: #fff7ee;
+}
+
+.panel {
+  position: sticky;
+  top: 80px;
+}
+
+label {
+  cursor: pointer;
+}
